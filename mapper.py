@@ -1,6 +1,4 @@
-from KarkSand import direct_kark_sort
-
-print(direct_kark_sort('aaa'))
+from bwt import FmIndex
 
 # wczytać genom
 # SA

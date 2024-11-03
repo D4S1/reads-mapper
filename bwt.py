@@ -86,8 +86,6 @@ class FmIndex():
         for c, count in sorted(tots.items()):
             self.first[c] = totc
             totc += count
-        step_time = (time.time() - step_time)/60
-        print(f'Ranks time: {step_time} min')
 
     def bwtFromSa(self, t, sa=None):
         ''' Given T, returns BWT(T) by way of the suffix array. '''

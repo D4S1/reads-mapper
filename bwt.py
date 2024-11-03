@@ -70,19 +70,13 @@ class FmIndex():
         print(f'SA time: {step_time} min')
 
         self.bwt, self.dollarRow = self.bwtFromSa(t, sa)
-        step_time = (time.time() - step_time)/60
-        print(f'BWT time: {step_time} min')
 
         # Get downsampled suffix array, taking every 1 out of 'ssaIval'
         # elements w/r/t T
         self.ssa = self.downsampleSuffixArray(sa, ssaIval)
-        step_time = (time.time() - step_time)/60
-        print(f'Downsample time: {step_time} min')
         self.slen = len(self.bwt)
         # Make rank checkpoints
         self.cps = FmCheckpoints(self.bwt, cpIval)
-        step_time = (time.time() - step_time)/60
-        print(f'Checkpoints time: {step_time} min')
         # Calculate # occurrences of each character
         tots = dict()
         for c in self.bwt:

@@ -1,4 +1,5 @@
 from KarkSand import direct_kark_sort
+import time
 
 
 class FmCheckpoints(object):
@@ -6,7 +7,7 @@ class FmCheckpoints(object):
         O(1) time, with the checkpoints taking O(m) space, where m is
         length of text. '''
 
-    def __init__(self, bw, cpIval=4):
+    def __init__(self, bw, cpIval=1):
         ''' Scan BWT, creating periodic checkpoints as we go '''
         self.cps = {}        # checkpoints
         self.cpIval = cpIval # spacing between checkpoints
@@ -59,18 +60,29 @@ class FmIndex():
                 ssa[i] = suf
         return ssa
 
-    def __init__(self, t, cpIval=4, ssaIval=4):
+    def __init__(self, t, cpIval=1, ssaIval=4):
         if t[-1] != '$':
             t += '$' # add dollar if not there already
         # Get BWT string and offset of $ within it
+        start_time = time.time()
         sa = direct_kark_sort(t)
+        step_time = (time.time() - start_time)/60
+        print(f'SA time: {step_time} min')
+
         self.bwt, self.dollarRow = self.bwtFromSa(t, sa)
+        step_time = (time.time() - step_time)/60
+        print(f'BWT time: {step_time} min')
+
         # Get downsampled suffix array, taking every 1 out of 'ssaIval'
         # elements w/r/t T
         self.ssa = self.downsampleSuffixArray(sa, ssaIval)
+        step_time = (time.time() - step_time)/60
+        print(f'Downsample time: {step_time} min')
         self.slen = len(self.bwt)
         # Make rank checkpoints
         self.cps = FmCheckpoints(self.bwt, cpIval)
+        step_time = (time.time() - step_time)/60
+        print(f'Checkpoints time: {step_time} min')
         # Calculate # occurrences of each character
         tots = dict()
         for c in self.bwt:
@@ -81,6 +93,8 @@ class FmIndex():
         for c, count in sorted(tots.items()):
             self.first[c] = totc
             totc += count
+        step_time = (time.time() - step_time)/60
+        print(f'Ranks time: {step_time} min')
 
     def bwtFromSa(self, t, sa=None):
         ''' Given T, returns BWT(T) by way of the suffix array. '''

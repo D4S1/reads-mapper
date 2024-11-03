@@ -70,7 +70,6 @@ class FmIndex():
         print(f'SA time: {step_time} min')
 
         self.bwt, self.dollarRow = self.bwtFromSa(t, sa)
-
         # Get downsampled suffix array, taking every 1 out of 'ssaIval'
         # elements w/r/t T
         self.ssa = self.downsampleSuffixArray(sa, ssaIval)

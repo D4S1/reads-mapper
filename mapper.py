@@ -1,5 +1,4 @@
 from bwt import FmIndex
-from Bio import SeqIO
 import time
 
 start_time = time.time()

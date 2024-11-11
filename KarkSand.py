@@ -5,27 +5,27 @@
 from array import array
 
 def radixpass(a, b, r, n, k) :
-  c = array("i", [0]*(k+1))
-  for i in range(n) :
-    c[r[a[i]]]+=1
+    c = array("i", [0]*(k+1))
+    for i in range(n) :
+        c[r[a[i]]]+=1
 
-  somme = 0
-  for i in range(k+1):
-    freq, c[i] = c[i], somme
-    somme += freq
+    somme = 0
+    for i in range(k+1):
+        freq, c[i] = c[i], somme
+        somme += freq
 
-  for i in range(n) :
-    b[c[r[a[i]]]] = a[i]
-    c[r[a[i]]] += 1
+    for i in range(n) :
+        b[c[r[a[i]]]] = a[i]
+        c[r[a[i]]] += 1
 
 def direct_kark_sort(s) :
-  alphabet = [None] + sorted(set(s))
-  k = len(alphabet)
-  n = len(s)
-  t = dict((c, i) for i,c in enumerate(alphabet))
-  SA = array('i', [0]*(n+3))
-  kark_sort(array('i', [t[c] for c in s]+[0]*3), SA, n, k)
-  return SA[:n]
+    alphabet = [None] + sorted(set(s))
+    k = len(alphabet)
+    n = len(s)
+    t = dict((c, i) for i,c in enumerate(alphabet))
+    SA = array('i', [0]*(n+3))
+    kark_sort(array('i', [t[c] for c in s]+[0]*3), SA, n, k)
+    return SA[:n]
 
 def kark_sort(s, SA, n, K):
   n0  = (n+2) // 3

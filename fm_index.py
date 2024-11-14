@@ -1,6 +1,7 @@
 from KarkSand import direct_kark_sort
 import time
 import pickle
+import re
 
 
 class FmCheckpoints(object):
@@ -61,12 +62,8 @@ class FmIndex():
                 ssa[i] = suf
         return ssa
 
-<<<<<<< HEAD
     def __init__(self, t, cpIval=1, ssaIval=1):
-=======
-    def __init__(self, t, cpIval=1, ssaIval=4):
         self.seq = t
->>>>>>> 022371a728022bf2ba90f87360a9261a24f9d7a1
         if t[-1] != '$':
             t += '$' # add dollar if not there already
         # Get BWT string and offset of $ within it

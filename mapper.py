@@ -1,4 +1,5 @@
 from fm_index import FmIndex
+from alignment import align_banded_global
 import time
 
 start_time = time.time()

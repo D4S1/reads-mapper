@@ -164,3 +164,4 @@ cython_debug/
 
 # Others
 prototype_mapper.py
+kmer_mapper.py

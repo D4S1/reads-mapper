@@ -1,6 +1,7 @@
 from fm_index import FmIndex
 from alignment import align_banded_global
 import time
+import pickle
 
 start_time = time.time()
 
@@ -14,6 +15,7 @@ def preprocess_genome(genome_path):
 
     fm_index = FmIndex(genome)
     print(f'Time: {(time.time() - start_time)/60} min')
+    fm_index.save_to_file('preprocessed_genome.pkl')
     return fm_index
 
 
@@ -39,29 +41,34 @@ def read_fasta(file_path):
     
     return sequences
 
-genome_fm_index = preprocess_genome(genome_path)
-sequences = read_fasta(reads_path)
+
+def map_seeds(read, ref_genome, size=9):
+    mapped_kmers = []
+
+    for ith_kmer in range(101):
+        kmer = read[ith_kmer*size: size*(ith_kmer + 1)]
+
+        first, last = ref_genome.range(kmer)
+
+        for o in range(first, last+1):
+            real_idx = ref_genome.resolve(o)
+            mapped_kmers.append({ith_kmer*size: [kmer, real_idx]})
+
+    return mapped_kmers
 
 
-def map_seed(read, ref_genome, size=9):
-
-    kmers = [{i*size: [read[i*size:size(1+1)], None]} for i in range(101)]
-
-    for kmer in kmers:
-        first, _ = ref_genome.range(kmers[kmer][0])
-        real_idx = ref_genome.resolve(first)
-        kmers[kmer][1] = real_idx
-
-    return kmers
-
-
-def main(reads_file, ref_file):
-
-    reads = read_fasta(reads_file)
+def main(reads, ref_genome):
+    for id, read in reads.items():
+        seeds = map_seeds(read, ref_genome, size=19)
     
-    with open(ref_file, 'r') as f:
-        ref_genome = f
+    return seeds
 
+dummy_data = {'read_0':'ATCCTATGAAAAATGCAAATGTGTCCATAAGCACAACTCTGTAATTATAGCTCTGCAGGTTAACTGATCTGAGTCTGAGTTTCCTCATTTGAATAACTGGGGTACTAATAACACCTATTTCACATAGATGATGTGAATATTCTATAAGCAATAAGTAGAAAATTAGCTGTTATACATAGGAAGATGAACAAATGATGGCTGTTGTTAAAAAAATAAAAAGCAAAGAGAGTAATTCTTTTTTTAAAAAGCTTTAATGAGGATTAAGTGACCTACTATCTGCAAGAGGCTTTGCACCGAGTAGGAACTCAGCAACATTTATTTCCTGCACTCCCTTTCTTCCTTCTTTGCTTTGTGAAAAAAAGACAAGCTGATGGACACACTCATTAGGGATAATTTATACTATTTTCTGAAGCAGAGTAGACTCAGTCATTTCTTTTATCCAGTTGCTAGTAATAGATGTTTGGCAGAAAAAGTCTCACTCAATGATGCAAGAGGTAACTGACTCACTAAAGACGTGGCATGCAAAATCCCGTTGGTGTCCATCCAGTTACATTTCTCCCCCAATGGTGGATGCCTAGAATTTCACAGTCTCTTCTCTACTTTTGATTTTGGTACCTCTTAAACCATTACTGCTCCTACAAATTCGTCTGAGTAATTATCCATACCTTCCCTGGAGTATGAGAGTGAAATAGATCTATAAGTAGATTTTTAGAATTAATGCTTAGGATTTGCATGAGGGAAGGAAGAGAGGAGGAAAGGAATGCTTGTGGCTGCTGATTTCAGAAGGAAATGGAAGTAGAATCTACAAACAGGGAAGGGAAACATATTGAAGACAAAAAAACAGTTTCCTACTGCATGAATTTTCCTGGATTTAATCCTTAATCCGAATGCATCAGGAACATCTACCATGCATTTGAGATGTCTGAGTGGGTCCAATCCAAGGGAAAGAAGCAAGTACTTTCTTAATGGTTTCTTTGTTGCTACATTAGCATTCCAAACT'}
 
-genome_fm_index = preprocess_genome(genome_path)
-print(genome_fm_index)
+if __name__ == "__main__":
+    # genome_fm_index = preprocess_genome(genome_path)
+    with open('preprocessed_genome.pkl', 'rb') as f:
+        ref_genome = pickle.load(f)
+
+    res = main(dummy_data, ref_genome)
+    print(f'{len(res)=}')

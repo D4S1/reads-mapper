@@ -62,6 +62,7 @@ class FmIndex():
         return ssa
 
     def __init__(self, t, cpIval=1, ssaIval=4):
+        self.seq = t
         if t[-1] != '$':
             t += '$' # add dollar if not there already
         # Get BWT string and offset of $ within it

@@ -40,3 +40,15 @@ def read_fasta(file_path):
 
 genome_fm_index = preprocess_genome(genome_path)
 sequences = read_fasta(reads_path)
+
+
+def map_seed(read, ref_genome, size=9):
+
+    kmers = [{i*size: [read[i*size:size(1+1)], None]} for i in range(101)]
+
+    for kmer in kmers:
+        first, _ = ref_genome.range(kmers[kmer][0])
+        real_idx = ref_genome.resolve(first)
+        kmers[kmer][1] = real_idx
+
+    return kmers

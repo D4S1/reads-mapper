@@ -1,4 +1,5 @@
 from fm_index import FmIndex
+from alignment import align_banded_global
 import time
 
 start_time = time.time()
@@ -52,3 +53,15 @@ def map_seed(read, ref_genome, size=9):
         kmers[kmer][1] = real_idx
 
     return kmers
+
+
+def main(reads_file, ref_file):
+
+    reads = read_fasta(reads_file)
+    
+    with open(ref_file, 'r') as f:
+        ref_genome = f
+
+
+genome_fm_index = preprocess_genome(genome_path)
+print(genome_fm_index)

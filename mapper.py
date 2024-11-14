@@ -1,4 +1,4 @@
-from bwt import FmIndex
+from fm_index import FmIndex
 import time
 
 start_time = time.time()

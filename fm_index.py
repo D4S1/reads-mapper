@@ -1,5 +1,6 @@
 from KarkSand import direct_kark_sort
 import time
+import pickle
 
 
 class FmCheckpoints(object):
@@ -184,4 +185,9 @@ class FmIndex():
             if l <= r:
                 return True
         return False
+    
+    def save_to_file(self, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(self, file)
+        print(f'FmIndex instance saved to {filename}')
 

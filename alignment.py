@@ -8,7 +8,7 @@ ORIGIN = (0, 0)
 N_INF = (float("-inf"), float("-inf"))
 
 
-def align_banded_global(v, w, k, delta):
+def align_banded(v, w, k):
     """
     Returns the score of the maximum scoring alignment of the strings v and w, as well as the actual alignment as
     computed by traceback_global.
@@ -18,9 +18,10 @@ def align_banded_global(v, w, k, delta):
     :param: delta
     """
 
-    if len(v) != len(w):
-        raise Exception("Strings v and w must be same length.")
+    # if len(v) != len(w):
+    #     raise Exception("Strings v and w must be same length.")
 
+    delta = delta_edit_distance()
     v_len = len(v) + 1
     w_len = len(w) + 1
     M = [[0 for j in range(w_len)] for i in range(v_len)]
@@ -87,3 +88,15 @@ def traceback_global(v, w, pointers):
         if i <= 0 and j <= 0:
             break
     return "".join(new_v[::-1]) + "\n" + "".join(new_w[::-1])
+
+def delta_edit_distance():
+    keys = ["A", "C", "T", "G", "-"]
+    delta = {}
+    for i in range(len(keys)):
+        delta[keys[i]] = {
+            k: v
+            for (k, v) in zip(
+                keys, [1 if keys[i] == keys[j] else -1 for j in range(len(keys))]
+            )
+        }
+    return delta

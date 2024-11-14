@@ -67,8 +67,13 @@ dummy_data = {'read_0':'ATCCTATGAAAAATGCAAATGTGTCCATAAGCACAACTCTGTAATTATAGCTCTGC
 
 if __name__ == "__main__":
     genome_fm_index = preprocess_genome(genome_path)
+<<<<<<< HEAD
     # with open('preprocessed_genome.pkl', 'rb') as f:
     #     ref_genome = pickle.load(f)
+=======
+    with open('preprocessed_genome.pkl', 'rb') as f:
+        ref_genome = pickle.load(f)
+>>>>>>> 022371a728022bf2ba90f87360a9261a24f9d7a1
 
     # s = time.time()
     # res = main(dummy_data, ref_genome)

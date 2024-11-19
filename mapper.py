@@ -65,7 +65,6 @@ def main(reads, ref_genome, size=9):
             for ref_idx in ref_indices:
                 pre_seq, suf_seq = read[:read_idx], read[read_idx+size:]
                 pre_ref, suf_ref = ref_genome.seq[ref_idx - 100 - read_idx :ref_idx], ref_genome.seq[ref_idx+size: ref_idx+size + len(suf_seq) + 100]
-c
                 res = align_banded(pre_seq,pre_ref, k=100)
                 print(res)
     return res

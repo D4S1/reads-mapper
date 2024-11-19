@@ -1,4 +1,4 @@
-from KarkSand import direct_kark_sort
+from archives.KarkSand import direct_kark_sort
 import time
 import pickle
 import re

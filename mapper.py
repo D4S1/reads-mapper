@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # read = next(iter(utils.read_fasta('data/reads20Ma.fasta').values()))[:10]
     read = 'GCATGCGTGACAATTATAGGTAGTTCTATTT'
 
-    wind_size = 10
+    wind_size = 100
     k = 9
     hash = 1234567
     err_max = 0.1
@@ -118,5 +118,4 @@ if __name__ == "__main__":
     s = 10
     read_length = len(read)
 
-    M = preprocess_w_set(genome[:100], wind_size, k, hash, genome=True)
-    H = H_map(M)
+    M = preprocess_w_set(genome[:10000000], wind_size, k, hash, genome=True)

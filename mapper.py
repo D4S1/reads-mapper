@@ -18,9 +18,6 @@ import utils
 def string_to_hashed_kmers(seq: str, k: int, hash: int) -> List:
     # list len: wind_size - k + 1
     return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq)-k+1)]
-
-def hash_kmer(kmer: str, hash: int) -> List:
-    return [mmh3.hash(kmer, seed) for seed in range(n_hash)]
     
 @utils.timed(1)
 def preprocess_genome(genome, wind_size, k, hash):
@@ -48,7 +45,7 @@ if __name__ == "__main__":
         log_f.write(f"{'='*5}Run date: {date.today()}{'='*5}\n")
 
     genome = next(iter(utils.read_fasta('data/reference20M.fasta').values()))
-    
+
     wind_size = 10
     k = 9
     n_hash = 1

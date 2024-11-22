@@ -41,21 +41,26 @@ def preprocess_genome(genome, wind_size, k, hash):
     return minimazers
 
 
-def sketch(w_set:set, s: int) -> set:
+def sketch(w_set: set, s: int) -> set:
     "Returns set of s smallest minimazers"
     return set(sorted(w_set)[:s])
 
-def winnowed_minhash_estimate(w_read: set, w_genome_i:set, s: int) -> float:
+def winnowed_minhash_estimate(w_read: set, w_genome_i: set, s: int) -> float:
     "Returns estimation of Jaccard similarity"
     s_w_genome_i = sketch(w_genome_i, s)
     s_w_read = sketch(w_read, s)
     s_union = sketch(w_read.union(w_genome_i), s)
     return len(s_union.intersection(s_w_read).intersection(s_w_genome_i)) / len(s_union)
 
-def tau(err_max:float, k:int, delta:float) -> float:
+def tau(err_max: float, k: int, delta: float) -> float:
     "Returns Jaccard similarity estimation given error rate"
     return 1/(2 * math.exp(err_max * k) - 1) - delta
 
+def filter_step_1(w_read: set, w_genome_i: set, s: int, err_max: float, k: int, delta: float) -> set:
+    pass
+
+def filter_step_2(w_read: set, w_genome_i: set, s: int, err_max: float, k: int, delta: float) -> set:
+    pass
 
 if __name__ == "__main__":
     # Run log init

@@ -1,6 +1,5 @@
 import logging
 import time
-from datetime import date
 
 logging.basicConfig(
     level=logging.DEBUG,

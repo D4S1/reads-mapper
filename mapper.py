@@ -21,24 +21,31 @@ def string_to_hashed_kmers(seq: str, k: int, hash: int) -> List:
     return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq)-k+1)]
     
 @utils.timed(1)
-def preprocess_genome(genome, wind_size, k, hash):
+def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool = False) -> set:
 
-    window_kmers = string_to_hashed_kmers(genome[:wind_size], k, hash)
+    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash)
     minimazers = set()
     start_pointer = 0
 
-    for wind_start in range(1, len(genome) - wind_size):
+    for wind_start in range(1, len(seq) - wind_size):
         
         # extract kmer that appear by 
-        new_kmer = genome[wind_start + wind_size - k: wind_start + wind_size]
+        new_kmer = seq[wind_start + wind_size - k: wind_start + wind_size]
 
         # update a window kmers
-        window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k +1)
+        if genome: 
+            window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k +1)
+        else: 
+            window_kmers[start_pointer] = mmh3.hash(new_kmer, hash)
+
         start_pointer = (start_pointer + 1) % (wind_size - k + 1)
 
         minimazers.add(min(window_kmers, key=lambda x: x[0]))
 
     return minimazers
+
+def H_map(w_genom: set) -> dict:
+    pass
 
 
 def sketch(w_set: set, s: int) -> set:
@@ -57,7 +64,8 @@ def tau(err_max: float, k: int, delta: float) -> float:
     return 1/(2 * math.exp(err_max * k) - 1) - delta
 
 def filter_step_1(w_read: set, w_genome_i: set, s: int, err_max: float, k: int, delta: float) -> set:
-    pass
+    "Returns the set of potential mapping position after stage 1 filtering"
+
 
 def filter_step_2(w_read: set, w_genome_i: set, s: int, err_max: float, k: int, delta: float) -> set:
     pass

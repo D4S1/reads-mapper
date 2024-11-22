@@ -24,7 +24,7 @@ def string_to_hashed_kmers(seq: str, k: int, hash: int) -> List:
 def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool = False) -> set:
 
     window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash)
-    minimazers = set()
+    minimizers = set()
     start_pointer = 0
 
     for wind_start in range(1, len(seq) - wind_size):
@@ -40,12 +40,25 @@ def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool =
 
         start_pointer = (start_pointer + 1) % (wind_size - k + 1)
 
-        minimazers.add(min(window_kmers, key=lambda x: x[0]))
+        minimizers.add(min(window_kmers, key=lambda x: x[0]))
 
-    return minimazers
+    return minimizers
 
 def H_map(w_genom: set) -> dict:
-    pass
+    """
+    Convert a set of (h, pos) tuples into a dictionary where each h key
+    maps to a list of its corresponding pos values.
+    """
+    result_dict = {}
+    for h, pos in w_genom:
+        # If h is already a key, append pos to its list
+        if h in result_dict:
+            result_dict[h].append(pos)
+        # If h is not a key, add it with pos as the start of its list
+        else:
+            result_dict[h] = [pos]
+    return result_dict
+
 
 
 def sketch(w_set: set, s: int) -> set:
@@ -81,5 +94,6 @@ if __name__ == "__main__":
     k = 9
     n_hash = 1
 
-    res = preprocess_genome(genome[:20], wind_size, k, n_hash)
+    res = preprocess_w_set(genome[:20], wind_size, k, n_hash)
+    H = H_map(res)
     print(res)

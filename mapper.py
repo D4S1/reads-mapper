@@ -16,14 +16,16 @@ import math
 
 
 # create hashed kmers
-def string_to_hashed_kmers(seq: str, k: int, hash: int) -> List:
+def string_to_hashed_kmers(seq: str, k: int, hash: int, genome=False) -> List:
     # list len: wind_size - k + 1
-    return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq)-k+1)]
+    if genome:
+        return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq)-k+1)]
+    return [mmh3.hash(seq[i:i+k], hash) for i in range(len(seq)-k+1)]
     
 @utils.timed(1)
 def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool = False) -> set:
 
-    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash)
+    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash, genome)
     minimizers = set()
     start_pointer = 0
 
@@ -35,12 +37,14 @@ def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool =
         # update a window kmers
         if genome: 
             window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k +1)
+            minimizers.add(min(window_kmers, key=lambda x: x[0]))
         else: 
             window_kmers[start_pointer] = mmh3.hash(new_kmer, hash)
+            minimizers.add(min(window_kmers))
 
         start_pointer = (start_pointer + 1) % (wind_size - k + 1)
 
-        minimizers.add(min(window_kmers, key=lambda x: x[0]))
+        
 
     return minimizers
 
@@ -94,6 +98,6 @@ if __name__ == "__main__":
     k = 9
     n_hash = 1
 
-    res = preprocess_w_set(genome[:20], wind_size, k, n_hash)
+    res = preprocess_w_set(genome[:20], wind_size, k, n_hash, genome=True)
     H = H_map(res)
-    print(res)
+    print(H)

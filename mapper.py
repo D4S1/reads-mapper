@@ -72,9 +72,17 @@ def winnowed_minhash_estimate(w_read: set, w_genome_i: set, s: int) -> float:
     s_union = sketch(w_read.union(w_genome_i), s)
     return len(s_union.intersection(s_w_read).intersection(s_w_genome_i)) / len(s_union)
 
-def tau(err_max: float, k: int, delta: float) -> float:
+def get_tau(err_max: float, k: int, delta: float) -> float:
     "Returns Jaccard similarity estimation given error rate"
     return 1/(2 * math.exp(err_max * k) - 1) - delta
+
+def get_minimizers(i: int, j: int):
+    "Returns hash values for positions between i and j in the genome"
+    # potrzebujemy tutaj mieć jednak listę minimizerów, zeby łatwo móc się do nich dostać
+    pass
+
+def solve_jackard(L: set, s: int) -> float:
+    return sum(L)/s  # to jest chyba źle
 
 def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: dict, m: int) -> List[tuple]:
     """
@@ -93,6 +101,32 @@ def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: dict, m: in
         if L[j] > L[i] < len(read):
             T.append((L[j] - len(read) + 1, L[i]))
     return T
+
+def mapping_stage_2(read: str, wind_size: int, k: int, hash: int, T: List[tuple]):
+    """
+    Returns a list of tuples of genome position ranges
+    for which the second filtering condition is satisfied
+    """
+    L = {}
+    L0 = {preprocess_w_set(read, wind_size, k, hash)}
+    P = []
+    for x, y in T:
+        i = x
+        j = x + len(read)
+        L = L0
+        L.insert(get_minimizers(i, j))
+        JI = solve_jackard(L)
+        if JI >= tau:
+            P.append((i, JI))
+        while i <= y:
+            L.detete(get_minimizers(i, i+1))
+            L.insert(get_minimizers(j, j+1))
+            JI = solve_jackard(L)
+            if JI >= tau:
+                P.append((i, JI))
+            i += 1
+            j += 1
+    return P
 
 def filter_step_1(w_read: set, w_genome_i: set, s: int, err_max: float, k: int, delta: float) -> set:
     "Returns the set of potential mapping position after stage 1 filtering"
@@ -117,5 +151,6 @@ if __name__ == "__main__":
     delta = 0.1
     s = 10
     read_length = len(read)
+    tau = 1/(2 * math.exp(err_max * k) - 1) - delta
 
     M = preprocess_w_set(genome[:10000000], wind_size, k, hash, genome=True)

@@ -39,9 +39,9 @@ def preprocess_genome(genome, wind_size, k, hash):
 
     return minimazers
 
-def sketch(w_set:set) -> set:
-    "Returns s smallest minimazers"
-    pass
+def sketch(w_set:set, s: int) -> set:
+    "Returns set of s smallest minimazers"
+    return set(sorted(w_set)[:s])
 
 def winnowed_minhash_estimate(w_read: set, w_genome_i:set) -> float:
     "Returns estimation of Jaccard similarity"

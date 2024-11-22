@@ -120,11 +120,3 @@ if __name__ == "__main__":
 
     M = preprocess_w_set(genome[:100], wind_size, k, hash, genome=True)
     H = H_map(M)
-
-    tau = 1/(2 * math.exp(err_max * k) - 1) - delta
-    m = math.ceil(s * tau)
-    m = 0
-
-    T = mapping_stage_1(read, wind_size, k, hash, H, m)
-    print(T)
-

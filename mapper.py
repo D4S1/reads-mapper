@@ -39,6 +39,19 @@ def preprocess_genome(genome, wind_size, k, hash):
 
     return minimazers
 
+def sketch(w_set:set) -> set:
+    "Returns s smallest minimazers"
+    pass
+
+def winnowed_minhash_estimate(w_read: set, w_genome_i:set) -> float:
+    "Returns estimation of Jaccard similarity"
+    pass
+
+def tau(err_max:float, k:int, delta:float) -> float:
+    "Returns Jaccard similarity estimation given error rate"
+    pass
+
+
 if __name__ == "__main__":
     # Run log init
     with open('app.log', 'a') as log_f:

@@ -2,6 +2,8 @@
 import mmh3
 import numpy as np
 from typing import List
+from datetime import date
+import utils
 
 # parametry:
 
@@ -20,13 +22,13 @@ def string_to_hashed_kmers(seq: str, k: int, n_hash: int) -> np.array:
 def hash_kmer(kmer: str, n_hash: int) -> List:
     return [mmh3.hash(kmer, seed) for seed in range(n_hash)]
     
-
+@utils.timed(1)
 def preprocess_genome(genome, wind_size, k, n_hash):
 
     window_kmers = string_to_hashed_kmers(genome[:wind_size], k, n_hash)
-    print(f'{window_kmers.shape=}')
     minimazers = [set(window_kmers.min(axis=0))]
     start_pointer = 0
+
     for wind_start in range(1, len(genome) - wind_size):
         
         # extract kmer that appear by 
@@ -40,13 +42,15 @@ def preprocess_genome(genome, wind_size, k, n_hash):
 
     return minimazers
 
+if __name__ == "__main__":
+    # Run log init
+    with open('app.log', 'a') as log_f:
+        log_f.write(f"{"="*5}Run date: {date.today()}{"="*5}\n")
 
+    genome = next(iter(utils.read_fasta('data/reference20M.fasta').values()))
+    print(len(genome))
+    wind_size = 800
+    k = 9
+    n_hash = 10
 
-seq = "AAAAACCCCCCGGGGTTTTAAA"
-wind_size = 10
-k = 5
-n_hash = 10
-
-# mat = string_to_hashed_kmers(seq=seq[:10], k=k, n_hash=n_hash)
-
-print(preprocess_genome(seq, 10, 5, 3))
+    res = preprocess_genome(genome[:1000000], wind_size, k, n_hash)

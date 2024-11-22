@@ -16,14 +16,16 @@ import math
 
 
 # create hashed kmers
-def string_to_hashed_kmers(seq: str, k: int, hash: int) -> List:
+def string_to_hashed_kmers(seq: str, k: int, hash: int, genome: bool = False) -> List:
     # list len: wind_size - k + 1
-    return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq)-k+1)]
+    if genome:
+        return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq)-k+1)]
+    return[mmh3.hash(seq[i:i+k], hash) for i in range(len(seq)-k+1)]
     
 @utils.timed(1)
 def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool = False) -> set:
 
-    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash)
+    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash, genome)
     minimizers = set()
     start_pointer = 0
 
@@ -35,12 +37,12 @@ def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool =
         # update a window kmers
         if genome: 
             window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k +1)
+            minimizers.add(min(window_kmers, key=lambda x: x[0]))
         else: 
             window_kmers[start_pointer] = mmh3.hash(new_kmer, hash)
+            minimizers.add(min(window_kmers))
 
         start_pointer = (start_pointer + 1) % (wind_size - k + 1)
-
-        minimizers.add(min(window_kmers, key=lambda x: x[0]))
 
     return minimizers
 
@@ -59,8 +61,6 @@ def H_map(w_genom: set) -> dict:
             result_dict[h] = [pos]
     return result_dict
 
-
-
 def sketch(w_set: set, s: int) -> set:
     "Returns set of s smallest minimazers"
     return set(sorted(w_set)[:s])
@@ -76,6 +76,24 @@ def tau(err_max: float, k: int, delta: float) -> float:
     "Returns Jaccard similarity estimation given error rate"
     return 1/(2 * math.exp(err_max * k) - 1) - delta
 
+def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: dict, m: int) -> List[tuple]:
+    """
+    Returns a list of tuples of genome position ranges
+    for which the first filtering condition is satisfied
+    """
+    T, L = [], []
+    for minimizer in preprocess_w_set(read, wind_size, k, hash):
+        try:
+            L.extend(H[minimizer])
+        except KeyError:
+            continue
+    L.sort()
+    for i in range(len(L) - m):
+        j = i + m - 1
+        if L[j] > L[i] < len(read):
+            T.append((L[j] - len(read) + 1, L[i]))
+    return T
+
 def filter_step_1(w_read: set, w_genome_i: set, s: int, err_max: float, k: int, delta: float) -> set:
     "Returns the set of potential mapping position after stage 1 filtering"
 
@@ -89,11 +107,28 @@ if __name__ == "__main__":
         log_f.write(f"{'='*5}Run date: {date.today()}{'='*5}\n")
 
     genome = next(iter(utils.read_fasta('data/reference20M.fasta').values()))
+    # read = next(iter(utils.read_fasta('data/reads20Ma.fasta').values()))[:10]
+    read = 'GCATGCGTGACAATTATAGGTAGTTCTATTT'
 
     wind_size = 10
     k = 9
-    n_hash = 1
+    hash = 1234567
+    err_max = 0.1
+    delta = 0.1
+    s = 10
+    read_length = len(read)
 
-    res = preprocess_w_set(genome[:20], wind_size, k, n_hash)
-    H = H_map(res)
-    print(res)
+
+    M = preprocess_w_set(genome[:100], wind_size, k, hash, genome=True)
+    H = H_map(M)
+
+    tau = 1/(2 * math.exp(err_max * k) - 1) - delta
+    m = math.ceil(s * tau)
+    m = 0
+
+    T = mapping_stage_1(read, wind_size, k, hash, H, m)
+    print(T)
+
+
+
+    

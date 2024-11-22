@@ -15,18 +15,18 @@ import utils
 
 
 # create hashed kmers
-def string_to_hashed_kmers(seq: str, k: int, n_hash: int) -> np.array:
-    # matrix shape (wind_size - k +1, n_hash)
-    return np.array([hash_kmer(seq[i:i+k], n_hash) for i in range(len(seq)-k+1)])
+def string_to_hashed_kmers(seq: str, k: int, hash: int) -> List:
+    # list len: wind_size - k + 1
+    return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq)-k+1)]
 
-def hash_kmer(kmer: str, n_hash: int) -> List:
+def hash_kmer(kmer: str, hash: int) -> List:
     return [mmh3.hash(kmer, seed) for seed in range(n_hash)]
     
 @utils.timed(1)
-def preprocess_genome(genome, wind_size, k, n_hash):
+def preprocess_genome(genome, wind_size, k, hash):
 
-    window_kmers = string_to_hashed_kmers(genome[:wind_size], k, n_hash)
-    minimazers = [set(window_kmers.min(axis=0))]
+    window_kmers = string_to_hashed_kmers(genome[:wind_size], k, hash)
+    minimazers = set()
     start_pointer = 0
 
     for wind_start in range(1, len(genome) - wind_size):
@@ -35,22 +35,23 @@ def preprocess_genome(genome, wind_size, k, n_hash):
         new_kmer = genome[wind_start + wind_size - k: wind_start + wind_size]
 
         # update a window kmers
-        window_kmers[start_pointer] = hash_kmer(new_kmer, n_hash)
+        window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k +1)
         start_pointer = (start_pointer + 1) % (wind_size - k + 1)
 
-        minimazers.append(set(window_kmers.min(axis=0)))
+        minimazers.add(min(window_kmers, key=lambda x: x[0]))
 
     return minimazers
 
 if __name__ == "__main__":
     # Run log init
     with open('app.log', 'a') as log_f:
-        log_f.write(f"{"="*5}Run date: {date.today()}{"="*5}\n")
+        log_f.write(f"{'='*5}Run date: {date.today()}{'='*5}\n")
 
     genome = next(iter(utils.read_fasta('data/reference20M.fasta').values()))
-    print(len(genome))
-    wind_size = 800
+    
+    wind_size = 10
     k = 9
-    n_hash = 10
+    n_hash = 1
 
-    res = preprocess_genome(genome[:1000000], wind_size, k, n_hash)
+    res = preprocess_genome(genome[:20], wind_size, k, n_hash)
+    print(res)

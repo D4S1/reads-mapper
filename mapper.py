@@ -118,7 +118,6 @@ if __name__ == "__main__":
     s = 10
     read_length = len(read)
 
-
     M = preprocess_w_set(genome[:100], wind_size, k, hash, genome=True)
     H = H_map(M)
 
@@ -129,6 +128,3 @@ if __name__ == "__main__":
     T = mapping_stage_1(read, wind_size, k, hash, H, m)
     print(T)
 
-
-
-    

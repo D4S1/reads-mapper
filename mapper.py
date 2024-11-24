@@ -86,9 +86,12 @@ def solve_jackard(L: set, s: int) -> float:
 
 def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: dict, m: int) -> List[tuple]:
     """
-    Returns a list of tuples of genome position ranges
+    Returns a list of tuples of genome position beginning ranges
     for which the first filtering condition is satisfied
     """
+
+    # to do: mozna zoptymalizować nakładające się range
+
     T, L = [], []
     for minimizer in preprocess_w_set(read, wind_size, k, hash):
         try:
@@ -96,10 +99,23 @@ def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: dict, m: in
         except KeyError:
             continue
     L.sort()
+    print(f'{L=}')
+    last_added = None
     for i in range(len(L) - m):
         j = i + m - 1
-        if L[j] > L[i] < len(read):
-            T.append((L[j] - len(read) + 1, L[i]))
+        if L[j] - L[i] < len(read):
+            if last_added is None or L[i] - last_added != 1:
+                if L[j] - len(read) + 1 < 0:
+                    T.append([0, L[i]])
+                else:
+                    T.append([L[j] - len(read) + 1, L[i]])
+                last_added = L[i]
+
+            else:
+                # if the difference between the last added value and current value is one,
+                # we can extend the existing range instead of creating a new one
+                T[-1][-1] = L[i]
+                last_added = L[i]
     return T
 
 def mapping_stage_2(read: str, wind_size: int, k: int, hash: int, T: List[tuple]):
@@ -142,15 +158,22 @@ if __name__ == "__main__":
 
     genome = next(iter(utils.read_fasta('data/reference20M.fasta').values()))
     # read = next(iter(utils.read_fasta('data/reads20Ma.fasta').values()))[:10]
-    read = 'GCATGCGTGACAATTATAGGTAGTTCTATTT'
+    read = 'AGTAACTCTGATAGAAATATGCTAGAGAATATAGTGGGAAAATAAACAGTACTGGTGTTT'
 
-    wind_size = 100
+    wind_size = 40
     k = 9
     hash = 1234567
     err_max = 0.1
     delta = 0.1
-    s = 10
+    s = 4
     read_length = len(read)
     tau = 1/(2 * math.exp(err_max * k) - 1) - delta
+    m = math.ceil(s * tau)
+    # m = 2
 
-    M = preprocess_w_set(genome[:10000000], wind_size, k, hash, genome=True)
+    M = preprocess_w_set(genome[:6000], wind_size, k, hash, genome=True)
+    H = H_map(M)
+
+    T = mapping_stage_1(read, wind_size, k, hash, H, m)
+    print(T)
+

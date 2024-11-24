@@ -1,5 +1,6 @@
 import logging
 import time
+import pickle
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -60,7 +61,14 @@ def read_fasta(file_path):
     
     return sequences
 
+def save_to_file(obj, filename):
+    with open(filename, 'wb') as file:
+        pickle.dump(obj, file)
 
+def load_pickle(filename):
+    with open(filename, 'rb') as file:
+        return pickle.load(file)
+    
 def merge_ranges(ranges, read_len):
 
     last_end = ranges[0][0] + read_len
@@ -90,18 +98,18 @@ def merge_ranges(ranges, read_len):
 def accuracy(out_file, test_file):
     
     with open(out_file, 'r') as file:
-        out_locs = [list(map(int, line.split('\t'))) for line in file.read().split('\n')]
+        out_locs = [list(map(int, line.split('\t')[1:])) for line in file.read().strip().split('\n')]
 
     with open(test_file, 'r') as file:
-        test_locs = [list(map(int, line.split('\t'))) for line in file.read().split('\n')]
+        test_locs = [list(map(int, line.split('\t')[1:])) for line in file.read().strip().split('\n')]
 
     acc = 0
 
     for pre_loc, test_loc in zip(out_locs, test_locs):
-
+        
         if score(pre_loc, test_loc):
             acc += 1
-    
+
     return acc / len(out_locs)
 
 

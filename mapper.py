@@ -3,11 +3,8 @@ from typing import List, Tuple, Dict, Set
 from datetime import date
 import utils
 import math
-import pickle
 import numpy as np
 import sys
-import time
-import pg
 
 # Parameters:
 # wind_size: window size (~800)
@@ -26,7 +23,6 @@ def string_to_hashed_kmers(seq: str, k: int, hash: int, genome: bool = False) ->
         return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq) - k + 1)]
     return [mmh3.hash(seq[i:i+k], hash) for i in range(len(seq) - k + 1)]
 
-@utils.timed(1)
 def w_set_read(seq: str, wind_size: int, k: int, hash: int) -> Set[int]:
     """
     Generate a set of minimizers, corresponding to each `wind_size` characters of a read.
@@ -44,7 +40,6 @@ def w_set_read(seq: str, wind_size: int, k: int, hash: int) -> Set[int]:
 
     return minimizers
 
-@utils.timed(1)
 def w_set_genome(seq: str, wind_size: int, k: int, hash: int) -> List[Tuple[int, int]]:
     """
     Generate a list of minimizers, along with their positions, corresponding to each `wind_size` characters of the genome.
@@ -119,38 +114,25 @@ def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple
     Return a list of tuples of genome position ranges for which the second filtering condition is satisfied
     """
     P = []
-    L = {h: 0 for h in w_read}  # initialize the map L with read minimizers
     for x, y in T:
         i = x
         j = x + read_length
-        w_bi = get_minimizers(i, j, M)
-        for h in w_bi:
-            if h in L:
-                L[h] = 1  # shared minimizer between read and Bi
-            else:
-                L[h] = 0  # unique to Bi
-        JI = solve_jackard(L, s)
+        w_bi = w_genome_i(i, j, M)
+
+        JI = solve_jackard(w_read, w_bi, s)
+
         if JI >= tau:
             P.append((i, JI))
 
         # Slide the window across the range and update L incrementally
         while i < y:
             # Remove minimizers from the left of the window
-            left_minimizers = get_minimizers(i, i + 1, M)
-            for h in left_minimizers:
-                if h in L:
-                    del L[h]
-
+            w_bi.discard(*w_genome_i(i, i + 1, M))
             # Add minimizers from the right of the window
-            right_minimizers = get_minimizers(j, j + 1, M)
-            for h in right_minimizers:
-                if h in w_read:
-                    L[h] = 1  # Shared minimizer
-                else:
-                    L[h] = 0  # Unique minimizer
-            
+            w_bi.add(*w_genome_i(j, j + 1, M))
+
             # Calculate Jaccard index for the updated window
-            JI = solve_jackard(L, s)
+            JI = solve_jackard(w_read, w_bi, s)
             if JI >= tau:
                 P.append((i + 1, JI))
             
@@ -158,14 +140,15 @@ def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple
             i += 1
             j += 1
 
-    return utils.merge_ranges(P, read_length)
+    if len(P) > 0:
+        return utils.merge_ranges(P, read_length)
+    return []
 
-def get_minimizers(p: int, q: int, M: List[Tuple[int, int]]) -> Set[int]:
+def w_genome_i(p: int, q: int, M: List[Tuple[int, int]]) -> set[int]:
     return set([M[i][0] for i in range(p, q)])
 
-def solve_jackard(L: dict, s: int) -> float:
-    shared = sum(v for v in L.values())
-    return min(shared, s) / s
+def solve_jackard(w_read: set, w_genome_i: set, s: int) -> float:
+    return  len(sketch(w_read.union(w_genome_i), s).intersection(sketch(w_read, s)).intersection(sketch(w_genome_i, s))) / s
 
 def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_max: float, delta:float) -> List:
 
@@ -176,17 +159,9 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
     read_length = len(read)
 
     T = mapping_stage_1(w_read, read_length, H, m)
-    P = pg.new_mapping_stage_2(w_read, read_length, T, M, s, tau)
+    P = mapping_stage_2(w_read, read_length, T, M, s, tau)
 
     return P
-
-def save_to_file(obj, filename):
-    with open(filename, 'wb') as file:
-        pickle.dump(obj, file)
-
-def load_pickle(filename):
-    with open(filename, 'rb') as file:
-        return pickle.load(file)
 
 def k_edit_dp(read, genome_reg):
     """
@@ -248,16 +223,15 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
     reads = utils.read_fasta(reads_filename)
     genome = next(iter(utils.read_fasta(genome_filename).values()))
 
-    # M = w_set_genome(genome, wind_size, k, hash)
-    # H = H_map(M)
-    M = load_pickle('M_pickle.pkl')
-    H = load_pickle('H_pickle.pkl')
+    M = w_set_genome(genome, wind_size, k, hash)
+    H = H_map(M)
+    # M = load_pickle('M_pickle.pkl')
+    # H = load_pickle('H_pickle.pkl')
 
-    ssss = time.time()
     with open(out_file, 'w') as file:
         for id, read in reads.items():
             P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
-            best = (None, None, math.inf)
+            best = (0, 0, math.inf)
             for start, end, _ in P:
                 s, e, edit = k_edit_dp(read, genome[start: end+1])
 
@@ -266,20 +240,17 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
                 if edit <= 100:
                     break
+            print(f'{id}\t{best}')
             file.write(f'{id}\t{best[0]}\t{best[1]}\n')
-    print(f'avg read time: {(time.time()- ssss)/ len(reads)}')
-
 
 
 if __name__ == "__main__":
-    with open('app.log', 'a') as log_f:
-        log_f.write(f"{'='*5} Run date: {date.today()} {'='*5}\n")
 
     wind_size = 100
     k = 9
     hash = 1234567
     err_max = 0.1
-    delta = 0.1
+    delta = 0.12
 
-    main('data/reads_test.fasta', 'data/reference20M.fasta', wind_size, k, hash, err_max, delta, 'data/reads_test_ans.txt')
-
+    main('data/reads_test.fasta', 'data/reference20M.fasta', wind_size, k, hash, err_max, delta, 'data/reads_out_locs.txt')
+    print(utils.accuracy('data/reads_out_locs.txt', 'data/reads_test_locs.txt'))

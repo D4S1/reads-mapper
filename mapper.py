@@ -110,37 +110,36 @@ def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: Dict[int, L
             last_added = L[i]
     return T
 
-def mapping_stage_2(read: str, wind_size: int, k: int, hash: int, T: List[tuple], M: List[Tuple[int, int]]):
+def mapping_stage_2(read: str, wind_size: int, k: int, hash: int, T: List[tuple], M: List[Tuple[int, int]], s: int, tau: float) -> List[Tuple[int, float]]:
     """
     Returns a list of tuples of genome position ranges
     for which the second filtering condition is satisfied
     """
-    L = {}
-    L0 = {w_set_read(read, wind_size, k, hash)}
+    L = w_set_read(read, wind_size, k, hash)  # w_a
     P = []
+    # juz na poczatku mamy w T tylko pozycje z co najmniej m wspólnymi minimizerami
     for x, y in T:
         i = x
         j = x + len(read)
-        L = L0
-        L = L.union(get_minimizers(i, j, M))
-        JI = solve_jackard(L)
+        L = L.union(get_minimizers(i, j, M)) # w_a U w_bi
+        JI = solve_jackard(L, s)
         if JI >= tau:
             P.append((i, JI))
         while i <= y:
-            L = L.difference(get_minimizers(i, i+1, M))
-            L = L.union(get_minimizers(j, j+1, M))
-            JI = solve_jackard(L)
+            L = L.difference(get_minimizers(i, i + 1, M))
+            L = L.union(get_minimizers(j, j + 1, M))
+            JI = solve_jackard(L, s)
             if JI >= tau:
                 P.append((i, JI))
             i += 1
             j += 1
     return P
 
-def get_minimizers(p, q, M):
+def get_minimizers(p: int, q: int, M: List[Tuple[int, int]]) -> Set[int]:
     return set([M[i][0] for i in range(p, q)])
 
-def solve_jackard(L):
-    pass
+def solve_jackard(L: set, s: int) -> float:
+    return min(len(L), s) / s
 
 if __name__ == "__main__":
     with open('app.log', 'a') as log_f:
@@ -162,7 +161,7 @@ if __name__ == "__main__":
     H = H_map(M)
 
     T = mapping_stage_1(read, wind_size, k, hash, H, m)
-    # print(f"Stage 1 Mapping Results: {T}")
+    print(f"Stage 1 Mapping Results: {T}")
 
-    # P = mapping_stage_2(read, wind_size, k, hash, T, tau)
-    # print(f"Stage 2 Mapping Results: {P}")
+    P = mapping_stage_2(read, wind_size, k, hash, T, M, s, tau)
+    print(f"Stage 2 Mapping Results: {P}")

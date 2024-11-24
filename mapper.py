@@ -28,7 +28,7 @@ def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool =
     minimizers = set()
     start_pointer = 0
 
-    for wind_start in range(1, len(seq) - wind_size):
+    for wind_start in range(1, len(seq) - wind_size + 1):
         
         # extract kmer that appear by 
         new_kmer = seq[wind_start + wind_size - k: wind_start + wind_size]
@@ -100,7 +100,7 @@ def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: dict, m: in
     L.sort()
     print(f'{L=}')
     last_added = None
-    for i in range(len(L) - m):
+    for i in range(len(L) - m + 1):
         j = i + m - 1
         if L[j] - L[i] < len(read):
             if last_added is None or L[i] - last_added != 1:

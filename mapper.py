@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict, Set
 from datetime import date
 import utils
 import math
-from math import ceil
+import pickle
 import numpy as np
 import sys
 
@@ -100,16 +100,16 @@ def mapping_stage_1(w_read: set, read_length: int, H: Dict[int, List[int]], m: i
     for minimizer in w_read:
         L.extend(H.get(minimizer, []))
     L.sort()
-    last_added = None
+    last_end = None
     for i in range(len(L) - m + 1):
         j = i + m - 1
         if L[j] - L[i] < read_length:
-            if last_added is None or L[i] - last_added != 1:
+            if last_end is None or last_end + 1 < L[i]:
                 start_pos = max(0, L[j] - read_length + 1)
                 T.append((start_pos, L[i]))
             else:
                 T[-1] = (T[-1][0], L[i])
-            last_added = L[i]
+            last_end = L[i]
     return T
 
 def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple[int, int]], s: int, tau: float) -> List[Tuple[int, float]]:
@@ -156,7 +156,7 @@ def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple
             i += 1
             j += 1
 
-    return P
+    return utils.merge_ranges(P, read_length)
 
 def get_minimizers(p: int, q: int, M: List[Tuple[int, int]]) -> Set[int]:
     return set([M[i][0] for i in range(p, q)])
@@ -170,7 +170,7 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
     w_read = w_set_read(read, wind_size, k, hash)
     s = len(w_read)
     tau = get_tau(err_max, k, delta)
-    m = ceil(s * tau)
+    m = math.ceil(s * tau)
     read_length = len(read)
 
     T = mapping_stage_1(w_read, read_length, H, m)
@@ -178,8 +178,13 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
 
     return P
 
-import numpy as np
-import sys
+def save_to_file(obj, filename):
+    with open(filename, 'wb') as file:
+        pickle.dump(obj, file)
+
+def load_pickle(filename):
+    with open(filename, 'rb') as file:
+        return pickle.load(file)
 
 def k_edit_dp(p, t):
     """
@@ -239,23 +244,26 @@ def trace(D, x, y):
 def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta):
 
     reads = utils.read_fasta(reads_filename)
-    genome = next(iter(utils.read_fasta(genome_filename).values()))
+    # genome = next(iter(utils.read_fasta(genome_filename).values()))
 
-    M = w_set_genome(genome[:6000], wind_size, k, hash)
-    H = H_map(M)
+    # M = w_set_genome(genome, wind_size, k, hash)
+    # H = H_map(M)
+    M = load_pickle('M_pickle.pkl')
+    H = load_pickle('H_pickle.pkl')
 
     for id, read in reads.items():
         P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
-        print(f'{id=}\n{P}')
+
 
 if __name__ == "__main__":
     with open('app.log', 'a') as log_f:
         log_f.write(f"{'='*5} Run date: {date.today()} {'='*5}\n")
 
-    wind_size = 40
+    wind_size = 100
     k = 9
     hash = 1234567
     err_max = 0.1
     delta = 0.1
 
     main('data/reads_test.fasta', 'data/reference20M.fasta', wind_size, k, hash, err_max, delta)
+

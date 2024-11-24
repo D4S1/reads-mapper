@@ -59,3 +59,21 @@ def read_fasta(file_path):
             sequences[sequence_id] = ''.join(sequence_data)
     
     return sequences
+
+
+def merge_ranges(ranges, read_len):
+
+    last_end = ranges[0][0] + read_len
+    mereged_ranges = [(ranges[0][0], last_end)]
+
+    for current_start, _ in ranges[1:]:
+        current_end = current_start + read_len
+
+        if current_start <= last_end + 1:
+            mereged_ranges[-1] = (mereged_ranges[-1][0], current_end)
+        else:
+            mereged_ranges.append((current_start, current_end))
+
+        last_end = current_end
+
+    return mereged_ranges

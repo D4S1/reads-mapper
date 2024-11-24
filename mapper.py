@@ -5,6 +5,7 @@ import utils
 import math
 import numpy as np
 import sys
+import argparse
 
 # Parameters:
 # wind_size: window size (~800)
@@ -251,11 +252,26 @@ if __name__ == "__main__":
     err_max = 0.1
     delta = 0.12
 
-    
-    
 
 if __name__ == "__main__":
-    args = utils.parse_arguments()
-
+    parser = argparse.ArgumentParser(
+            description="DNA sequence mapper that takes a reference genome, a set of reads, and outputs the mapping results."
+        )
+    parser.add_argument(
+        "reference",
+        type=str,
+        help="Path to the reference genome file in FASTA format (e.g., reference.fasta)."
+    )
+    parser.add_argument(
+        "reads",
+        type=str,
+        help="Path to the reads file in FASTA format (e.g., reads.fasta)."
+    )
+    parser.add_argument(
+        "output",
+        type=str,
+        help="Path to the output file where mapping results will be saved (e.g., output.txt)."
+    )
+    args = parser.parse_args()
     main(args.reads, args.reference, wind_size, k, hash, err_max, delta, args.output)
     # print(utils.accuracy('data/reads_out_locs.txt', 'data/reads_test_locs.txt'))

@@ -167,3 +167,4 @@ prototype_mapper.py
 kmer_mapper.py
 preprocessed_genome.pkl
 plan.txt
+smith_waterman.py

@@ -22,32 +22,47 @@ def string_to_hashed_kmers(seq: str, k: int, hash: int, genome: bool = False) ->
         return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq) - k + 1)]
     return [mmh3.hash(seq[i:i+k], hash) for i in range(len(seq) - k + 1)]
 
-@utils.timed(1)
-def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool = False) -> Set:
+
+def w_set_read(seq: str, wind_size: int, k: int, hash: int) -> Set[int]:
     """
-    Generate a set of minimizers from the first `wind_size` characters of a sequence.
+    Generate a set of minimizers, corresponding to each `wind_size` characters of a read.
     """
-    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash, genome)
+    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash)
     minimizers = set()
     start_pointer = 0
 
     for wind_start in range(1, len(seq) - wind_size + 1):
         new_kmer = seq[wind_start + wind_size - k: wind_start + wind_size]
         # Update window k-mers
-        if genome:
-            window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k + 1)
-            minimizers.add(min(window_kmers, key=lambda x: x[0]))
-        else:
-            window_kmers[start_pointer] = mmh3.hash(new_kmer, hash)
-            minimizers.add(min(window_kmers))
+        window_kmers[start_pointer] = mmh3.hash(new_kmer, hash)
+        minimizers.add(min(window_kmers))
         start_pointer = (start_pointer + 1) % (wind_size - k + 1)
 
     return minimizers
 
-def H_map(w_genom: Set[Tuple[int, int]]) -> Dict[int, List[int]]:
+@utils.timed(1)
+def w_set_genome(seq: str, wind_size: int, k: int, hash: int) -> List[Tuple[int, int]]:
+    """
+    Generate a list of minimizers, along with their positions, corresponding to each `wind_size` characters of the genome.
+    """
+    window_kmers = string_to_hashed_kmers(seq[:wind_size], k, hash, genome=True)
+    minimizers = []
+    start_pointer = 0
+
+    for wind_start in range(1, len(seq) - wind_size + 1):
+        new_kmer = seq[wind_start + wind_size - k: wind_start + wind_size]
+        # Update window k-mers
+        window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k + 1)
+        minimizers.append(min(window_kmers, key=lambda x: x[0]))
+        start_pointer = (start_pointer + 1) % (wind_size - k + 1)
+
+    return minimizers
+
+def H_map(w_genom: List[Tuple[int, int]]) -> Dict[int, List[int]]:
     """
     Convert a set of (hash, position) tuples into a dictionary where each hash maps to a list of positions.
     """
+    w_genom = set(w_genom)
     result_dict = {}
     for h, pos in w_genom:
         result_dict.setdefault(h, []).append(pos)
@@ -80,7 +95,7 @@ def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: Dict[int, L
     """
     T = []
     L = []
-    for minimizer in preprocess_w_set(read, wind_size, k, hash):
+    for minimizer in w_set_read(read, wind_size, k, hash):
         L.extend(H.get(minimizer, []))
     L.sort()
     print(L)
@@ -101,9 +116,9 @@ def mapping_stage_2(read: str, wind_size: int, k: int, hash: int, T: List[Tuple[
     Refine genome position ranges by applying the second filtering condition.
     """
     P = []
-    L_read = preprocess_w_set(read, wind_size, k, hash)
+    L_read = w_set_read(read, wind_size, k, hash)
     for x, y in T:
-        L_range = preprocess_w_set(genome[x:x+len(read)], wind_size, k, hash)
+        L_range = w_set_read(genome[x:x+len(read)], wind_size, k, hash)
         JI = len(L_read.intersection(L_range)) / len(L_read.union(L_range))
         if JI >= tau:
             P.append((x, JI))
@@ -125,7 +140,7 @@ if __name__ == "__main__":
     tau = get_tau(err_max, k, delta)
     m = math.ceil(s * tau)
 
-    M = preprocess_w_set(genome[:6000], wind_size, k, hash, genome=True)
+    M = w_set_genome(genome[:6000], wind_size, k, hash)
     H = H_map(M)
 
     T = mapping_stage_1(read, wind_size, k, hash, H, m)

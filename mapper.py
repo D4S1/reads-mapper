@@ -90,7 +90,7 @@ def get_tau(err_max: float, k: int, delta: float) -> float:
     """
     return 1 / (2 * math.exp(err_max * k) - 1) - delta
 
-def mapping_stage_1(w_read: set, H: Dict[int, List[int]], m: int) -> List[Tuple[int, int]]:
+def mapping_stage_1(w_read: set, read_length: int, H: Dict[int, List[int]], m: int) -> List[Tuple[int, int]]:
     """
     Identify genome position ranges for which the first filtering condition is satisfied.
     """
@@ -102,16 +102,16 @@ def mapping_stage_1(w_read: set, H: Dict[int, List[int]], m: int) -> List[Tuple[
     last_added = None
     for i in range(len(L) - m + 1):
         j = i + m - 1
-        if L[j] - L[i] < len(read):
+        if L[j] - L[i] < read_length:
             if last_added is None or L[i] - last_added != 1:
-                start_pos = max(0, L[j] - len(read) + 1)
+                start_pos = max(0, L[j] - read_length + 1)
                 T.append((start_pos, L[i]))
             else:
                 T[-1] = (T[-1][0], L[i])
             last_added = L[i]
     return T
 
-def mapping_stage_2(w_read: set, T: List[tuple], M: List[Tuple[int, int]], s: int, tau: float) -> List[Tuple[int, float]]:
+def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple[int, int]], s: int, tau: float) -> List[Tuple[int, float]]:
     """
     Returns a list of tuples of genome position ranges
     for which the second filtering condition is satisfied
@@ -120,7 +120,7 @@ def mapping_stage_2(w_read: set, T: List[tuple], M: List[Tuple[int, int]], s: in
     L = {h: 1 for h in w_read}  # initialize the map L with read minimizers
     for x, y in T:
         i = x
-        j = x + len(read)
+        j = x + read_length
         w_bi = get_minimizers(i, j, M)
         for h in w_bi:
             if h in L:
@@ -171,9 +171,10 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
     s = len(w_read)
     tau = get_tau(err_max, k, delta)
     m = ceil(s * tau)
+    read_length = len(read)
 
-    T = mapping_stage_1(w_read, H, m)
-    P = mapping_stage_2(w_read, T, M, s, tau)
+    T = mapping_stage_1(w_read, read_length, H, m)
+    P = mapping_stage_2(w_read, read_length, T, M, s, tau)
 
     return P
 

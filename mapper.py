@@ -5,7 +5,6 @@ from datetime import date
 import utils
 import math
 from math import ceil
-import time
 
 # Parameters:
 # wind_size: window size (~800)
@@ -167,7 +166,6 @@ def solve_jackard(L: dict, s: int) -> float:
     shared = sum(v for v in L.values())
     return min(shared, s) / s
 
-
 def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_max: float, delta:float) -> List:
 
     w_read = w_set_read(read, wind_size, k, hash)
@@ -180,41 +178,27 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
 
     return P
 
+
 def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta):
 
     reads = utils.read_fasta(reads_filename)
     genome = next(iter(utils.read_fasta(genome_filename).values()))
 
-    M = w_set_genome(genome, wind_size, k, hash)
+    M = w_set_genome(genome[:6000], wind_size, k, hash)
     H = H_map(M)
 
-    s = time.time()
     for id, read in reads.items():
         P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
         print(f'{id=}\n{P}')
-    print(f'avg time per read {(time.time()-s)/len(reads)}')
 
 if __name__ == "__main__":
     with open('app.log', 'a') as log_f:
         log_f.write(f"{'='*5} Run date: {date.today()} {'='*5}\n")
 
-    genome = next(iter(utils.read_fasta('data/reference20M.fasta').values()))
-    read = 'AGTAACTCTGATAGAAATATGCTAGAGAATATAGTGGGAAAATAAACAGTACTGGTGTTT'
-
-    wind_size = 100
+    wind_size = 40
     k = 9
     hash = 1234567
     err_max = 0.1
     delta = 0.1
 
     main('data/reads_test.fasta', 'data/reference20M.fasta', wind_size, k, hash, err_max, delta)
-
-<<<<<<< HEAD
-=======
-    w_read = w_set_read(read, wind_size, k, hash)
-    T = mapping_stage_1(w_read, H, m)
-    print(f"Stage 1 Mapping Results: {T}")
-
-    P = mapping_stage_2(w_read, wind_size, k, hash, T, M, s, tau)
-    print(f"Stage 2 Mapping Results: {P}")
->>>>>>> 1223785c88d7b5dbf7df7a519cb01abc7abcd03e

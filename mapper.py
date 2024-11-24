@@ -111,13 +111,12 @@ def mapping_stage_1(w_read: set, H: Dict[int, List[int]], m: int) -> List[Tuple[
             last_added = L[i]
     return T
 
-def mapping_stage_2(w_read: set, wind_size: int, k: int, hash: int, T: List[tuple], M: List[Tuple[int, int]], s: int, tau: float) -> List[Tuple[int, float]]:
+def mapping_stage_2(w_read: set, T: List[tuple], M: List[Tuple[int, int]], s: int, tau: float) -> List[Tuple[int, float]]:
     """
     Returns a list of tuples of genome position ranges
     for which the second filtering condition is satisfied
     """
     P = []
-    w_read = w_set_read(read, wind_size, k, hash)
     L = {h: 1 for h in w_read}  # initialize the map L with read minimizers
     for x, y in T:
         i = x
@@ -174,7 +173,7 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
     m = ceil(s * tau)
 
     T = mapping_stage_1(w_read, H, m)
-    P = mapping_stage_2(w_read, wind_size, k, hash, T, M, s, tau)
+    P = mapping_stage_2(w_read, T, M, s, tau)
 
     return P
 
@@ -214,5 +213,5 @@ if __name__ == "__main__":
     T = mapping_stage_1(w_read, H, m)
     print(f"Stage 1 Mapping Results: {T}")
 
-    P = mapping_stage_2(w_read, wind_size, k, hash, T, M, s, tau)
+    P = mapping_stage_2(w_read, T, M, s, tau)
     print(f"Stage 2 Mapping Results: {P}")

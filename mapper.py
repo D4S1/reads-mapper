@@ -23,7 +23,7 @@ def string_to_hashed_kmers(seq: str, k: int, hash: int, genome: bool = False) ->
         return [(mmh3.hash(seq[i:i+k], hash), i) for i in range(len(seq) - k + 1)]
     return [mmh3.hash(seq[i:i+k], hash) for i in range(len(seq) - k + 1)]
 
-
+@utils.timed(1)
 def w_set_read(seq: str, wind_size: int, k: int, hash: int) -> Set[int]:
     """
     Generate a set of minimizers, corresponding to each `wind_size` characters of a read.

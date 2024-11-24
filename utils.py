@@ -85,3 +85,26 @@ def merge_ranges(ranges, read_len):
     mereged_ranges[-1] = (mereged_ranges[-1][0], mereged_ranges[-1][1], mereged_ranges[-1][2] / reg_n)
 
     return sorted(mereged_ranges, key=lambda x:-x[2])
+
+
+def accuracy(out_file, test_file):
+    
+    with open(out_file, 'r') as file:
+        out_locs = [list(map(int, line.split('\t'))) for line in file.read().split('\n')]
+
+    with open(test_file, 'r') as file:
+        test_locs = [list(map(int, line.split('\t'))) for line in file.read().split('\n')]
+
+    acc = 0
+
+    for pre_loc, test_loc in zip(out_locs, test_locs):
+
+        if score(pre_loc, test_loc):
+            acc += 1
+    
+    return acc / len(out_locs)
+
+
+
+def score(pre_loc, test_loc):
+    return abs(pre_loc[0] - test_loc[0]) + abs(pre_loc[1] - test_loc[1]) <= 20

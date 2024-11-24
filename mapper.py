@@ -4,6 +4,8 @@ from datetime import date
 import utils
 import math
 import pickle
+import numpy as np
+import sys
 
 # Parameters:
 # wind_size: window size (~800)
@@ -112,8 +114,7 @@ def mapping_stage_1(w_read: set, read_length: int, H: Dict[int, List[int]], m: i
 
 def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple[int, int]], s: int, tau: float) -> List[Tuple[int, float]]:
     """
-    Returns a list of tuples of genome position ranges
-    for which the second filtering condition is satisfied
+    Return a list of tuples of genome position ranges for which the second filtering condition is satisfied
     """
     P = []
     L = {h: 0 for h in w_read}  # initialize the map L with read minimizers
@@ -184,6 +185,61 @@ def save_to_file(obj, filename):
 def load_pickle(filename):
     with open(filename, 'rb') as file:
         return pickle.load(file)
+
+def k_edit_dp(p, t):
+    """
+    Find the coordinates in t of the alignment with p with the fewest edits. 
+    Return the coordinates and the number of edits. 
+    If multiple alignments tie for best, return the leftmost. 
+    """
+    D = np.zeros((len(p)+1, len(t)+1), dtype=int)
+    D[1:, 0] = range(1, len(p)+1)  # Initialize the first column
+
+    for i in range(1, len(p)+1):
+        for j in range(1, len(t)+1):
+            delt = 1 if p[i-1] != t[j-1] else 0
+            D[i, j] = min(D[i-1, j-1] + delt, D[i-1, j] + 1, D[i, j-1] + 1)
+
+    # Find minimum edit distance in last row
+    mnJ, mn = None, len(p) + len(t)
+    for j in range(len(t)+1):
+        if D[len(p), j] < mn:
+            mnJ, mn = j, D[len(p), j]
+
+    # Backtrace; stops as soon as it gets to the first row
+    beg, end = trace(D, p, t[:mnJ])
+    
+    # Return edit distance, alignment coordinates
+    return beg, end, mn
+
+def trace(D, x, y):
+    """
+    Backtrace edit-distance matrix D for strings x and y and return the alignment coordinates.
+    """
+    i, j = len(x), len(y)
+    algn_len = 0
+    while i > 0:
+        diag, vert, horz = sys.maxsize, sys.maxsize, sys.maxsize
+        if i > 0 and j > 0:
+            delt = 0 if x[i-1] == y[j-1] else 1
+            diag = D[i-1, j-1] + delt
+        if i > 0:
+            vert = D[i-1, j] + 1
+        if j > 0:
+            horz = D[i, j-1] + 1
+        if diag <= vert and diag <= horz:
+            # Diagonal was best
+            i -= 1
+            j -= 1
+        elif vert <= horz:
+            # Vertical was best
+            i -= 1
+        else:
+            # Horizontal was best
+            j -= 1
+        algn_len += 1
+    # j = offset of the first (leftmost) character of t involved in the alignment
+    return j, j + algn_len - 1
 
 def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta):
 

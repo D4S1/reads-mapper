@@ -243,7 +243,7 @@ def trace(D, read, genome_reg):
     # j = offset of the first (leftmost) character of t involved in the alignment
     return j, j + algn_len - 1
 
-def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta):
+def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, out_file):
 
     reads = utils.read_fasta(reads_filename)
     genome = next(iter(utils.read_fasta(genome_filename).values()))
@@ -254,20 +254,19 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta):
     H = load_pickle('H_pickle.pkl')
 
     ssss = time.time()
-    for id, read in reads.items():
-        sss = time.time()
-        P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
-        best = (None, None, math.inf)
-        for start, end, _ in P:
-            s, e, edit = k_edit_dp(read, genome[start: end+1])
+    with open(out_file, 'w') as file:
+        for id, read in reads.items():
+            P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
+            best = (None, None, math.inf)
+            for start, end, _ in P:
+                s, e, edit = k_edit_dp(read, genome[start: end+1])
 
-            if edit < best[2]:
-                best = (start + s, start+ e, edit)
+                if edit < best[2]:
+                    best = (start + s, start+ e, edit)
 
-            if edit <= 100:
-                break
-        print(f'{id=}\t{best}')
-        print(f'avg read time: {(time.time()- sss)}')
+                if edit <= 100:
+                    break
+            file.write(f'{id}\t{best[0]}\t{best[1]}\n')
     print(f'avg read time: {(time.time()- ssss)/ len(reads)}')
 
 
@@ -282,5 +281,5 @@ if __name__ == "__main__":
     err_max = 0.1
     delta = 0.1
 
-    main('data/reads_test.fasta', 'data/reference20M.fasta', wind_size, k, hash, err_max, delta)
+    main('data/reads_test.fasta', 'data/reference20M.fasta', wind_size, k, hash, err_max, delta, 'data/reads_test_ans.txt')
 

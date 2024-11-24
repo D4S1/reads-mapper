@@ -117,7 +117,7 @@ def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple
     for which the second filtering condition is satisfied
     """
     P = []
-    L = {h: 1 for h in w_read}  # initialize the map L with read minimizers
+    L = {h: 0 for h in w_read}  # initialize the map L with read minimizers
     for x, y in T:
         i = x
         j = x + read_length

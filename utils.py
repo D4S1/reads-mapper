@@ -1,6 +1,7 @@
 import logging
 import time
 import pickle
+import argparse
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -113,6 +114,28 @@ def accuracy(out_file, test_file):
     return acc / len(out_locs)
 
 
-
 def score(pre_loc, test_loc):
     return abs(pre_loc[0] - test_loc[0]) + abs(pre_loc[1] - test_loc[1]) <= 20
+
+
+def parse_arguments():
+        parser = argparse.ArgumentParser(
+            description="DNA sequence mapper that takes a reference genome, a set of reads, and outputs the mapping results."
+        )
+        parser.add_argument(
+            "reference",
+            type=str,
+            help="Path to the reference genome file in FASTA format (e.g., reference.fasta)."
+        )
+        parser.add_argument(
+            "reads",
+            type=str,
+            help="Path to the reads file in FASTA format (e.g., reads.fasta)."
+        )
+        parser.add_argument(
+            "output",
+            type=str,
+            help="Path to the output file where mapping results will be saved (e.g., output.txt)."
+        )
+        
+        return parser.parse_args()

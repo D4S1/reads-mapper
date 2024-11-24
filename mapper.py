@@ -251,5 +251,11 @@ if __name__ == "__main__":
     err_max = 0.1
     delta = 0.12
 
-    main('data/reads_test.fasta', 'data/reference20M.fasta', wind_size, k, hash, err_max, delta, 'data/reads_out_locs.txt')
-    print(utils.accuracy('data/reads_out_locs.txt', 'data/reads_test_locs.txt'))
+    
+    
+
+if __name__ == "__main__":
+    args = utils.parse_arguments()
+
+    main(args.reads, args.reference, wind_size, k, hash, err_max, delta, args.output)
+    # print(utils.accuracy('data/reads_out_locs.txt', 'data/reads_test_locs.txt'))

@@ -90,7 +90,7 @@ def get_tau(err_max: float, k: int, delta: float) -> float:
     """
     return 1 / (2 * math.exp(err_max * k) - 1) - delta
 
-def mapping_stage_1(w_read: set, wind_size: int, k: int, hash: int, H: Dict[int, List[int]], m: int) -> List[Tuple[int, int]]:
+def mapping_stage_1(w_read: set, H: Dict[int, List[int]], m: int) -> List[Tuple[int, int]]:
     """
     Identify genome position ranges for which the first filtering condition is satisfied.
     """
@@ -116,31 +116,55 @@ def mapping_stage_2(w_read: set, wind_size: int, k: int, hash: int, T: List[tupl
     Returns a list of tuples of genome position ranges
     for which the second filtering condition is satisfied
     """
-    L = w_read  # w_a
     P = []
-    # juz na poczatku mamy w T tylko pozycje z co najmniej m wspólnymi minimizerami
+    w_read = w_set_read(read, wind_size, k, hash)
+    L = {h: 1 for h in w_read}  # initialize the map L with read minimizers
     for x, y in T:
         i = x
         j = x + len(read)
-        L = L.union(get_minimizers(i, j, M)) # w_a U w_bi
+        w_bi = get_minimizers(i, j, M)
+        for h in w_bi:
+            if h in L:
+                L[h] = 1  # shared minimizer between read and Bi
+            else:
+                L[h] = 0  # unique to Bi
         JI = solve_jackard(L, s)
         if JI >= tau:
             P.append((i, JI))
-        while i <= y:
-            L = L.difference(get_minimizers(i, i + 1, M))
-            L = L.union(get_minimizers(j, j + 1, M))
+
+        # Slide the window across the range and update L incrementally
+        while i < y:
+            # Remove minimizers from the left of the window
+            left_minimizers = get_minimizers(i, i + 1, M)
+            for h in left_minimizers:
+                if h in L:
+                    del L[h]
+
+            # Add minimizers from the right of the window
+            right_minimizers = get_minimizers(j, j + 1, M)
+            for h in right_minimizers:
+                if h in w_read:
+                    L[h] = 1  # Shared minimizer
+                else:
+                    L[h] = 0  # Unique minimizer
+            
+            # Calculate Jaccard index for the updated window
             JI = solve_jackard(L, s)
             if JI >= tau:
-                P.append((i, JI))
+                P.append((i + 1, JI))
+            
+            # Slide the window
             i += 1
             j += 1
+
     return P
 
 def get_minimizers(p: int, q: int, M: List[Tuple[int, int]]) -> Set[int]:
     return set([M[i][0] for i in range(p, q)])
 
-def solve_jackard(L: set, s: int) -> float:
-    return min(len(L), s) / s
+def solve_jackard(L: dict, s: int) -> float:
+    shared = sum(v for v in L.values())
+    return min(shared, s) / s
 
 def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_max: float, delta:float) -> List:
 
@@ -149,7 +173,7 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
     tau = get_tau(err_max, k, delta)
     m = ceil(s * tau)
 
-    T = mapping_stage_1(w_read, wind_size, k, hash, H, m)
+    T = mapping_stage_1(w_read, H, m)
     P = mapping_stage_2(w_read, wind_size, k, hash, T, M, s, tau)
 
     return P
@@ -186,8 +210,9 @@ if __name__ == "__main__":
     M = w_set_genome(genome[:6000], wind_size, k, hash)
     H = H_map(M)
 
-    T = mapping_stage_1(read, wind_size, k, hash, H, m)
+    w_read = w_set_read(read, wind_size, k, hash)
+    T = mapping_stage_1(w_read, H, m)
     print(f"Stage 1 Mapping Results: {T}")
 
-    P = mapping_stage_2(read, wind_size, k, hash, T, M, s, tau)
+    P = mapping_stage_2(w_read, wind_size, k, hash, T, M, s, tau)
     print(f"Stage 2 Mapping Results: {P}")

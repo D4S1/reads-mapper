@@ -35,7 +35,7 @@ def preprocess_w_set(seq: str, wind_size: int, k: int, hash: int, genome: bool =
         new_kmer = seq[wind_start + wind_size - k: wind_start + wind_size]
         # Update window k-mers
         if genome:
-            window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k)
+            window_kmers[start_pointer] = (mmh3.hash(new_kmer, hash), wind_start + wind_size - k + 1)
             minimizers.add(min(window_kmers, key=lambda x: x[0]))
         else:
             window_kmers[start_pointer] = mmh3.hash(new_kmer, hash)
@@ -83,7 +83,7 @@ def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: Dict[int, L
     for minimizer in preprocess_w_set(read, wind_size, k, hash):
         L.extend(H.get(minimizer, []))
     L.sort()
-
+    print(L)
     last_added = None
     for i in range(len(L) - m + 1):
         j = i + m - 1
@@ -91,10 +91,9 @@ def mapping_stage_1(read: str, wind_size: int, k: int, hash: int, H: Dict[int, L
             if last_added is None or L[i] - last_added != 1:
                 start_pos = max(0, L[j] - len(read) + 1)
                 T.append((start_pos, L[i]))
-                last_added = L[i]
             else:
                 T[-1] = (T[-1][0], L[i])
-                last_added = L[i]
+            last_added = L[i]
     return T
 
 def mapping_stage_2(read: str, wind_size: int, k: int, hash: int, T: List[Tuple[int, int]], tau: float) -> List[Tuple[int, float]]:
@@ -132,5 +131,5 @@ if __name__ == "__main__":
     T = mapping_stage_1(read, wind_size, k, hash, H, m)
     print(f"Stage 1 Mapping Results: {T}")
 
-    P = mapping_stage_2(read, wind_size, k, hash, T, tau)
-    print(f"Stage 2 Mapping Results: {P}")
+    # P = mapping_stage_2(read, wind_size, k, hash, T, tau)
+    # print(f"Stage 2 Mapping Results: {P}")

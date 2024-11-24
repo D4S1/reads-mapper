@@ -64,16 +64,24 @@ def read_fasta(file_path):
 def merge_ranges(ranges, read_len):
 
     last_end = ranges[0][0] + read_len
-    mereged_ranges = [(ranges[0][0], last_end)]
+    reg_n = 1
+    
+    mereged_ranges = [(ranges[0][0], last_end, ranges[0][1])]
 
-    for current_start, _ in ranges[1:]:
+    for current_start, jc in ranges[1:]:
         current_end = current_start + read_len
 
         if current_start <= last_end + 1:
-            mereged_ranges[-1] = (mereged_ranges[-1][0], current_end)
+            mereged_ranges[-1] = (mereged_ranges[-1][0], current_end, mereged_ranges[-1][2] + jc)
+            reg_n += 1
+
         else:
-            mereged_ranges.append((current_start, current_end))
+            mereged_ranges[-1] = (mereged_ranges[-1][0], mereged_ranges[-1][1], mereged_ranges[-1][2] / reg_n)
+            reg_n = 1
+            mereged_ranges.append((current_start, current_end, jc))
 
         last_end = current_end
+    
+    mereged_ranges[-1] = (mereged_ranges[-1][0], mereged_ranges[-1][1], mereged_ranges[-1][2] / reg_n)
 
-    return mereged_ranges
+    return sorted(mereged_ranges, key=lambda x:-x[2])

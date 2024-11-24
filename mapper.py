@@ -6,6 +6,8 @@ import math
 import pickle
 import numpy as np
 import sys
+import time
+import pg
 
 # Parameters:
 # wind_size: window size (~800)
@@ -174,7 +176,7 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
     read_length = len(read)
 
     T = mapping_stage_1(w_read, read_length, H, m)
-    P = mapping_stage_2(w_read, read_length, T, M, s, tau)
+    P = pg.new_mapping_stage_2(w_read, read_length, T, M, s, tau)
 
     return P
 
@@ -186,42 +188,42 @@ def load_pickle(filename):
     with open(filename, 'rb') as file:
         return pickle.load(file)
 
-def k_edit_dp(p, t):
+def k_edit_dp(read, genome_reg):
     """
     Find the coordinates in t of the alignment with p with the fewest edits. 
     Return the coordinates and the number of edits. 
     If multiple alignments tie for best, return the leftmost. 
     """
-    D = np.zeros((len(p)+1, len(t)+1), dtype=int)
-    D[1:, 0] = range(1, len(p)+1)  # Initialize the first column
+    D = np.zeros((len(read)+1, len(genome_reg)+1), dtype=np.int32)
+    D[1:, 0] = range(1, len(read)+1)  # Initialize the first column
 
-    for i in range(1, len(p)+1):
-        for j in range(1, len(t)+1):
-            delt = 1 if p[i-1] != t[j-1] else 0
+    for i in range(1, len(read)+1):
+        for j in range(1, len(genome_reg)+1):
+            delt = 1 if read[i-1] != genome_reg[j-1] else 0
             D[i, j] = min(D[i-1, j-1] + delt, D[i-1, j] + 1, D[i, j-1] + 1)
 
     # Find minimum edit distance in last row
-    mnJ, mn = None, len(p) + len(t)
-    for j in range(len(t)+1):
-        if D[len(p), j] < mn:
-            mnJ, mn = j, D[len(p), j]
+    mnJ, mn = None, len(read) + len(genome_reg)
+    for j in range(len(genome_reg)+1):
+        if D[len(read), j] < mn:
+            mnJ, mn = j, D[len(read), j]
 
     # Backtrace; stops as soon as it gets to the first row
-    beg, end = trace(D, p, t[:mnJ])
+    beg, end = trace(D, read, genome_reg[:mnJ])
     
     # Return edit distance, alignment coordinates
     return beg, end, mn
 
-def trace(D, x, y):
+def trace(D, read, genome_reg):
     """
-    Backtrace edit-distance matrix D for strings x and y and return the alignment coordinates.
+    Backtrace edit-distance matrix D for read and genome region and return the alignment coordinates.
     """
-    i, j = len(x), len(y)
+    i, j = len(read), len(genome_reg)
     algn_len = 0
     while i > 0:
         diag, vert, horz = sys.maxsize, sys.maxsize, sys.maxsize
         if i > 0 and j > 0:
-            delt = 0 if x[i-1] == y[j-1] else 1
+            delt = 0 if read[i-1] == genome_reg[j-1] else 1
             diag = D[i-1, j-1] + delt
         if i > 0:
             vert = D[i-1, j] + 1
@@ -244,15 +246,30 @@ def trace(D, x, y):
 def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta):
 
     reads = utils.read_fasta(reads_filename)
-    # genome = next(iter(utils.read_fasta(genome_filename).values()))
+    genome = next(iter(utils.read_fasta(genome_filename).values()))
 
     # M = w_set_genome(genome, wind_size, k, hash)
     # H = H_map(M)
     M = load_pickle('M_pickle.pkl')
     H = load_pickle('H_pickle.pkl')
 
+    ssss = time.time()
     for id, read in reads.items():
+        sss = time.time()
         P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
+        best = (None, None, math.inf)
+        for start, end, _ in P:
+            s, e, edit = k_edit_dp(read, genome[start: end+1])
+
+            if edit < best[2]:
+                best = (start + s, start+ e, edit)
+
+            if edit <= 100:
+                break
+        print(f'{id=}\t{best}')
+        print(f'avg read time: {(time.time()- sss)}')
+    print(f'avg read time: {(time.time()- ssss)/ len(reads)}')
+
 
 
 if __name__ == "__main__":

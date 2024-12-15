@@ -126,7 +126,7 @@ def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple
             P.append((i, JI))
 
         # Slide the window across the range and update L incrementally
-        while i < y:
+        while j < y:
             # Remove minimizers from the left of the window
             w_bi.discard(*w_genome_i(i, i + 1, M))
             # Add minimizers from the right of the window

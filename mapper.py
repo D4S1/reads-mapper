@@ -1,6 +1,5 @@
 import mmh3
 from typing import List, Tuple, Dict, Set
-from datetime import date
 import utils
 import math
 import numpy as np

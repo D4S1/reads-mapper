@@ -224,12 +224,12 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
     reads = utils.read_fasta(reads_filename)
     genome = next(iter(utils.read_fasta(genome_filename).values()))
 
-    M = w_set_genome(genome, wind_size, k, hash)
-    H = H_map(M)
-    utils.save_to_file(M, 'M_pickle.pkl')
-    utils.save_to_file(H, 'H_pickle.pkl')
-    # M = load_pickle('M_pickle.pkl')
-    # H = load_pickle('H_pickle.pkl')
+    # M = w_set_genome(genome, wind_size, k, hash)
+    # H = H_map(M)
+    # utils.save_to_file(M, 'M_pickle.pkl')
+    # utils.save_to_file(H, 'H_pickle.pkl')
+    M = utils.load_pickle('M_pickle.pkl')
+    H = utils.load_pickle('H_pickle.pkl')
 
     with open(out_file, 'w') as file:
         for id, read in reads.items():

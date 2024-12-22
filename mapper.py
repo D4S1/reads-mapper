@@ -244,10 +244,10 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
                 if edit <= 100:
                     break
-            if best[1] == 0:
+            if best[1] != 0:
+                file.write(f'{id}\t{best[0]}\t{best[1]}\n')
+            else:
                 print(f'No mapping for {id}')
-                break
-            file.write(f'{id}\t{best[0]}\t{best[1]}\n')
 
 
 if __name__ == "__main__":
@@ -256,7 +256,6 @@ if __name__ == "__main__":
     k = 9
     hash = 1234567
     err_max = 0.1
-    # delta = 0.12
     delta = 0.13
 
 
@@ -282,5 +281,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(args.reads, args.reference, wind_size, k, hash, err_max, delta, args.output)
-    print(f'Time: {(t - time.time()) / 60} min')
-    # print(utils.accuracy('data/reads_out_locs.txt', 'data/reads_test_locs.txt'))
+    print(f'Time: {(time.time() - t) / 60} min')
+    

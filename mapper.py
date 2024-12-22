@@ -5,6 +5,7 @@ import math
 import numpy as np
 import sys
 import argparse
+import time
 
 # Parameters:
 # wind_size: window size (~800)
@@ -225,6 +226,8 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
     M = w_set_genome(genome, wind_size, k, hash)
     H = H_map(M)
+    utils.save_to_file(M, 'M_pickle.pkl')
+    utils.save_to_file(H, 'H_pickle.pkl')
     # M = load_pickle('M_pickle.pkl')
     # H = load_pickle('H_pickle.pkl')
 
@@ -240,6 +243,9 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
                 if edit <= 100:
                     break
+            if best[1] == 0:
+                print(f'No mapping for {id}')
+                break
             file.write(f'{id}\t{best[0]}\t{best[1]}\n')
 
 
@@ -249,10 +255,12 @@ if __name__ == "__main__":
     k = 9
     hash = 1234567
     err_max = 0.1
-    delta = 0.12
+    # delta = 0.12
+    delta = 0.15
 
 
 if __name__ == "__main__":
+    t = time.time()
     parser = argparse.ArgumentParser(
             description="DNA sequence mapper that takes a reference genome, a set of reads, and outputs the mapping results."
         )
@@ -273,4 +281,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(args.reads, args.reference, wind_size, k, hash, err_max, delta, args.output)
+    print(f'Time: {(t - time.time()) / 60} min')
     # print(utils.accuracy('data/reads_out_locs.txt', 'data/reads_test_locs.txt'))

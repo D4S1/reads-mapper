@@ -168,5 +168,8 @@ kmer_mapper.py
 preprocessed_genome.pkl
 plan.txt
 smith_waterman.py
+H_pickle.pkl
+M_pickle.pkl
 data/reads_out_20Ma.txt
 data/reads_out_20Mb.txt
+data/reads_out_20Mb_2.txt

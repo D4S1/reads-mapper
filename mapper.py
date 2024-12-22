@@ -151,11 +151,11 @@ def w_genome_i(p: int, q: int, M: List[Tuple[int, int]]) -> set[int]:
 def solve_jackard(w_read: set, w_genome_i: set, s: int) -> float:
     return  len(sketch(w_read.union(w_genome_i), s).intersection(sketch(w_read, s)).intersection(sketch(w_genome_i, s))) / s
 
-def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_max: float, delta:float) -> List:
+def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, tau: float) -> List:
 
     w_read = w_set_read(read, wind_size, k, hash)
     s = len(w_read)
-    tau = get_tau(err_max, k, delta)
+    # tau = get_tau(err_max, k, delta)
     m = math.ceil(s * tau)
     read_length = len(read)
 
@@ -223,6 +223,7 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
     reads = utils.read_fasta(reads_filename)
     genome = next(iter(utils.read_fasta(genome_filename).values()))
+    tau = get_tau(err_max, k, delta)
 
     # M = w_set_genome(genome, wind_size, k, hash)
     # H = H_map(M)
@@ -233,7 +234,7 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
     with open(out_file, 'w') as file:
         for id, read in reads.items():
-            P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
+            P = mapper(read, M, H, wind_size, k, hash, tau)
             best = (0, 0, math.inf)
             for start, end, _ in P:
                 s, e, edit = k_edit_dp(read, genome[start: end+1])
@@ -256,7 +257,7 @@ if __name__ == "__main__":
     hash = 1234567
     err_max = 0.1
     # delta = 0.12
-    delta = 0.15
+    delta = 0.13
 
 
 if __name__ == "__main__":

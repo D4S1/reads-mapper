@@ -219,6 +219,18 @@ def trace(D, read, genome_reg):
     # j = offset of the first (leftmost) character of t involved in the alignment
     return j, j + algn_len - 1
 
+def run_mapper(params: dict, reads_filename: str, genome_filename: str, out_file: str) -> None:
+    """ Helper function for hyperparameter tuning. """
+    main(reads_filename, 
+         genome_filename, 
+         params['wind_size'], 
+         params['k'], 
+         params['hash'], 
+         params['err_max'],
+         params['delta'],
+         out_file
+    )
+
 def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, out_file):
 
     reads = utils.read_fasta(reads_filename)
@@ -256,7 +268,7 @@ if __name__ == "__main__":
     k = 9
     hash = 1234567
     err_max = 0.1
-    delta = 0.13
+    delta = 0.12
 
 
 if __name__ == "__main__":

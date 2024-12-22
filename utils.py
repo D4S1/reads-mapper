@@ -105,13 +105,33 @@ def accuracy(out_file, test_file):
         test_locs = [list(map(int, line.split('\t')[1:])) for line in file.read().strip().split('\n')]
 
     acc = 0
-
     for pre_loc, test_loc in zip(out_locs, test_locs):
-        
         if score(pre_loc, test_loc):
             acc += 1
 
     return acc / len(out_locs)
+
+
+def mapped_reads_and_acc(out_file, test_file):
+
+    with open(out_file, 'r') as file:
+        out_data = [line.strip().split('\t') for line in file.readlines()]
+        out_dict = {line[0]: list(map(int, line[1:])) for line in out_data}  # dict: id -> [start, end]
+
+    with open(test_file, 'r') as file:
+        test_data = [line.strip().split('\t') for line in file.readlines()]
+        test_dict = {line[0]: list(map(int, line[1:])) for line in test_data}  # dict: id -> [start, end]
+
+    mapped_reads = len(out_dict) / len(test_dict) if test_dict else 0
+
+    acc = 0
+    for read_id, pre_loc in out_dict.items():
+            test_loc = test_dict[read_id]
+            if score(pre_loc, test_loc):
+                acc += 1
+    acc = acc / len(out_dict) if out_dict else 0.0
+
+    return mapped_reads, acc
 
 
 def score(pre_loc, test_loc):

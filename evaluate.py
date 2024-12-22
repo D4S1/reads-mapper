@@ -6,4 +6,5 @@ if __name__ == '__main__':
     parser.add_argument('mapper_output', type=str)
     parser.add_argument('reference', type=str)
     args = parser.parse_args()
-    print(utils.accuracy(args.mapper_output, args.reference))
+    mapped_reads, acc = utils.mapped_reads_and_acc(args.mapper_output, args.reference)
+    print(f'{mapped_reads:.3f} of all reads mapped with accuracy {acc:.3f}')

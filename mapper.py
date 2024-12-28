@@ -234,7 +234,6 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
     with open(out_file, 'w') as file:
         for id, read in reads.items():
             if (time.time() - start_time)/60 > 5+len(reads)/10:
-                print((time.time() - start_time)/60 > 5+len(reads)/10)
                 return None, None, None
             P = mapper(read, M, H, wind_size, k, hash, tau)
             best = (0, 0, math.inf)

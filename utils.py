@@ -71,14 +71,14 @@ def load_pickle(filename):
         return pickle.load(file)
     
 def merge_ranges(ranges, read_len):
-
-    last_end = ranges[0][0] + read_len
+    window_size = 100
+    last_end = ranges[0][0] + read_len + window_size
     reg_n = 1
     
     mereged_ranges = [(ranges[0][0], last_end, ranges[0][1])]
 
     for current_start, jc in ranges[1:]:
-        current_end = current_start + read_len
+        current_end = current_start + read_len + window_size
 
         if current_start <= last_end + 1:
             mereged_ranges[-1] = (mereged_ranges[-1][0], current_end, mereged_ranges[-1][2] + jc)
@@ -105,13 +105,45 @@ def accuracy(out_file, test_file):
         test_locs = [list(map(int, line.split('\t')[1:])) for line in file.read().strip().split('\n')]
 
     acc = 0
-
-    for pre_loc, test_loc in zip(out_locs, test_locs):
-        
+    mapped = 0
+    for id, (pre_loc, test_loc) in enumerate(zip(out_locs, test_locs)):
+        if pre_loc == [0, 0]:
+            print('skipped')
+            continue
+        mapped += 1
         if score(pre_loc, test_loc):
             acc += 1
+        else:
+            print(f'badly mapped read id: {id}')
 
-    return acc / len(out_locs)
+    return acc / mapped
+
+
+import pandas as pd
+
+def accuracy(out_file, test_file):
+    # Load files into DataFrames
+    out_df = pd.read_csv(out_file, sep='\t', header=None, names=['id', 'start', 'end'])
+    test_df = pd.read_csv(test_file, sep='\t', header=None, names=['id', 'start', 'end'])
+
+    out_df['id'] = out_df['id'].astype(str).str.strip()
+    test_df['id'] = test_df['id'].astype(str).str.strip()
+
+    # Merge DataFrames on the 'id' column
+    merged_df = out_df.merge(test_df, on='id', how='left', suffixes=('_pred', '_test'))
+
+    acc = 0
+    for _, row in merged_df.iterrows():
+        test_loc = [row['start_test'], row['end_test']]
+        pre_loc = [row['start_pred'], row['end_pred']]
+
+        if score(pre_loc, test_loc):
+            acc += 1
+        else:
+            print(f'badly mapped read id: {row["id"]}')
+
+    print(f'mapped {len(merged_df)*100/len(test_df)}%')
+    return acc / len(merged_df)
 
 
 def score(pre_loc, test_loc):

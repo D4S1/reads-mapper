@@ -5,6 +5,7 @@ import math
 import numpy as np
 import sys
 import argparse
+import time
 
 # Parameters:
 # wind_size: window size (~800)
@@ -88,7 +89,7 @@ def get_tau(err_max: float, k: int, delta: float) -> float:
     """
     return 1 / (2 * math.exp(err_max * k) - 1) - delta
 
-def mapping_stage_1(w_read: set, read_length: int, H: Dict[int, List[int]], m: int) -> List[Tuple[int, int]]:
+def mapping_stage_1(w_read: set, read_length: int, H: Dict[int, List[int]], m: int, wind_size: int) -> List[Tuple[int, int]]:
     """
     Identify genome position ranges for which the first filtering condition is satisfied.
     """
@@ -102,7 +103,7 @@ def mapping_stage_1(w_read: set, read_length: int, H: Dict[int, List[int]], m: i
         j = i + m - 1
         if L[j] - L[i] < read_length:
             if last_end is None or last_end + 1 < L[i]:
-                start_pos = max(0, L[j] - read_length + 1)
+                start_pos = max(0, L[j] - read_length - wind_size + 1)
                 T.append((start_pos, L[i]))
             else:
                 T[-1] = (T[-1][0], L[i])
@@ -120,7 +121,6 @@ def mapping_stage_2(w_read: set, read_length: int, T: List[tuple], M: List[Tuple
         w_bi = w_genome_i(i, j, M)
 
         JI = solve_jackard(w_read, w_bi, s)
-
         if JI >= tau:
             P.append((i, JI))
 
@@ -148,7 +148,7 @@ def w_genome_i(p: int, q: int, M: List[Tuple[int, int]]) -> set[int]:
     return set([M[i][0] for i in range(p, q)])
 
 def solve_jackard(w_read: set, w_genome_i: set, s: int) -> float:
-    return  len(sketch(w_read.union(w_genome_i), s).intersection(sketch(w_read, s)).intersection(sketch(w_genome_i, s))) / s
+    return  len((sketch(w_read, s)).intersection(sketch(w_genome_i, s))) / s
 
 def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_max: float, delta:float) -> List:
 
@@ -158,7 +158,9 @@ def mapper(read: str, M: list, H: set, wind_size: int, k: int, hash: int, err_ma
     m = math.ceil(s * tau)
     read_length = len(read)
 
-    T = mapping_stage_1(w_read, read_length, H, m)
+    assert m != 0, "Wrong params combination. m cannot be 0"
+
+    T = mapping_stage_1(w_read, read_length, H, m, wind_size)
     P = mapping_stage_2(w_read, read_length, T, M, s, tau)
 
     return P
@@ -169,7 +171,7 @@ def k_edit_dp(read, genome_reg):
     Return the coordinates and the number of edits. 
     If multiple alignments tie for best, return the leftmost. 
     """
-    D = np.zeros((len(read)+1, len(genome_reg)+1), dtype=np.int32)
+    D = np.zeros((len(read)+1, len(genome_reg)+1), dtype=int)
     D[1:, 0] = range(1, len(read)+1)  # Initialize the first column
 
     for i in range(1, len(read)+1):
@@ -194,7 +196,7 @@ def trace(D, read, genome_reg):
     Backtrace edit-distance matrix D for read and genome region and return the alignment coordinates.
     """
     i, j = len(read), len(genome_reg)
-    algn_len = 0
+    align_len = 0
     while i > 0:
         diag, vert, horz = sys.maxsize, sys.maxsize, sys.maxsize
         if i > 0 and j > 0:
@@ -214,22 +216,25 @@ def trace(D, read, genome_reg):
         else:
             # Horizontal was best
             j -= 1
-        algn_len += 1
+        align_len += 1
     # j = offset of the first (leftmost) character of t involved in the alignment
-    return j, j + algn_len - 1
+    return j, j + align_len + 1
 
 def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, out_file):
-
+    
+    start_time = time.time()
     reads = utils.read_fasta(reads_filename)
     genome = next(iter(utils.read_fasta(genome_filename).values()))
 
     M = w_set_genome(genome, wind_size, k, hash)
     H = H_map(M)
-    # M = load_pickle('M_pickle.pkl')
-    # H = load_pickle('H_pickle.pkl')
 
+    skipped_counter = 0
+    start_mapping = time.time()
     with open(out_file, 'w') as file:
         for id, read in reads.items():
+            if (time.time() - start_time)/60 > 5+len(reads)/10:
+                return None, None, None
             P = mapper(read, M, H, wind_size, k, hash, err_max, delta)
             best = (0, 0, math.inf)
             for start, end, _ in P:
@@ -240,19 +245,21 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
                 if edit <= 100:
                     break
+            if best[0] == 0 and best[1] == 0:
+                skipped_counter += 1
+                continue
             file.write(f'{id}\t{best[0]}\t{best[1]}\n')
+    return (time.time() - start_time)/60, 5+len(reads)/10, (time.time()-start_mapping)/(60*len(reads))
 
 
 if __name__ == "__main__":
 
     wind_size = 100
-    k = 9
-    hash = 1234567
-    err_max = 0.1
-    delta = 0.12
+    k = 7
+    hash = 12345
+    err_max = 0.075
+    delta = 0.175
 
-
-if __name__ == "__main__":
     parser = argparse.ArgumentParser(
             description="DNA sequence mapper that takes a reference genome, a set of reads, and outputs the mapping results."
         )
@@ -273,4 +280,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(args.reads, args.reference, wind_size, k, hash, err_max, delta, args.output)
-    # print(utils.accuracy('data/reads_out_locs.txt', 'data/reads_test_locs.txt'))
+    print(utils.accuracy(args.output, args.reads.replace('fasta', 'txt')))

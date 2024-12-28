@@ -168,3 +168,7 @@ kmer_mapper.py
 preprocessed_genome.pkl
 plan.txt
 smith_waterman.py
+# small_data/
+outs/
+data/
+log*

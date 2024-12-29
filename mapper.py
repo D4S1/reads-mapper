@@ -245,20 +245,21 @@ def main(reads_filename, genome_filename, wind_size, k, hash, err_max, delta, ou
 
                 if edit <= 100:
                     break
-            if best[0] == 0 and best[1] == 0:
+            if best[0] == 0 and best[1] == 0 or best[2] >= 475:
                 skipped_counter += 1
                 continue
             file.write(f'{id}\t{best[0]}\t{best[1]}\n')
+    print(f'whole process time  {(time.time() - start_time)/60} min\ntime per read {(time.time()-start_mapping)/len(reads)}s')
     return (time.time() - start_time)/60, 5+len(reads)/10, (time.time()-start_mapping)/len(reads)
 
 
 if __name__ == "__main__":
 
-    wind_size = 100
-    k = 7
+    wind_size = 80
+    k = 9
     hash = 12345
-    err_max = 0.075
-    delta = 0.175
+    err_max = 0.1
+    delta = 0.1
 
     parser = argparse.ArgumentParser(
             description="DNA sequence mapper that takes a reference genome, a set of reads, and outputs the mapping results."

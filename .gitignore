@@ -172,3 +172,4 @@ smith_waterman.py
 outs/
 data/
 log*
+*.csv
